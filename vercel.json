@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/produto",       "destination": "/produto.html" },
+    { "source": "/contabilidade", "destination": "/contabilidade.html" },
+    { "source": "/crescimento",   "destination": "/crescimento.html" }
+  ]
+}
