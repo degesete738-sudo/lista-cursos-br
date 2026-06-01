@@ -4,7 +4,24 @@
       "WebFetch(domain:listamrr.com.br)",
       "mcp__Claude_in_Chrome__list_connected_browsers",
       "mcp__Claude_Preview__preview_start",
-      "Bash(vercel --version)"
+      "Bash(vercel --version)",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Bash(winget install *)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git push *)",
+      "WebFetch(domain:lista-cursos-br.vercel.app)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(git reset *)"
     ]
   }
 }
