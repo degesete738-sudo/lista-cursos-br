@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lista Cursos BR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:    #080808;
+      --bg2:   #0f0f0f;
+      --bg3:   #161616;
+      --bd:    rgba(255,255,255,.07);
+      --bdHi:  rgba(255,255,255,.13);
+      --text:  #ebebeb;
+      --text2: #888;
+      --text3: #444;
+      --green: #22c55e;
+      --gd:    #16a34a;
+      --gl:    rgba(34,197,94,.06);
+      --gs:    rgba(34,197,94,.12);
+      --red:   #f87171;
+    }
+
+    @keyframes fadeIn    { from { opacity:0 }                              to { opacity:1 } }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-12px) } to { opacity:1; transform:none } }
+    @keyframes slideUp   { from { opacity:0; transform:translateY(14px) }  to { opacity:1; transform:none } }
+    @keyframes rowIn     { from { opacity:0; transform:translateX(-10px) } to { opacity:1; transform:none } }
+    @keyframes cardIn    { from { opacity:0; transform:translateY(28px) scale(.96) } to { opacity:1; transform:none } }
+    @keyframes fadeOut   { to   { opacity:0 } }
+    @keyframes spin      { to   { transform:rotate(360deg) } }
+    @keyframes glowPulse { 0%,100% { box-shadow:0 0 0 0 rgba(34,197,94,.5) } 60% { box-shadow:0 0 0 10px rgba(34,197,94,0) } }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(rgba(255,255,255,.022) 1px, transparent 1px);
+      background-size: 28px 28px;
+      color: var(--text);
+      font-size: 14px; line-height: 1.55;
+      animation: fadeIn .4s ease both;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: '';
+      position: fixed; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; height: 500px;
+      background: radial-gradient(ellipse 70% 100% at 50% -10%, rgba(34,197,94,.055) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── LOGIN OVERLAY ── */
+    .lo {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.82);
+      backdrop-filter: blur(14px) saturate(1.2);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .lo.lo-hide { animation: fadeOut .35s ease forwards; pointer-events: none; }
+
+    .lo-card {
+      background: var(--bg2);
+      border: 1px solid var(--bdHi);
+      border-radius: 18px; padding: 44px 40px 36px;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.03);
+      animation: cardIn .45s cubic-bezier(.22,1,.36,1) both;
+    }
+    .lo-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--green); margin-bottom: 14px;
+    }
+    .lo-title { font-size: 22px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 4px; }
+    .lo-sub   { font-size: 13px; color: var(--text2); margin-bottom: 32px; }
+
+    .lo-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    .lo-field label { font-size: 12px; font-weight: 500; color: var(--text2); }
+    .lo-field input {
+      padding: 11px 14px; background: var(--bg);
+      border: 1px solid var(--bd); border-radius: 9px;
+      font-family: inherit; font-size: 13px; color: var(--text); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .lo-field input::placeholder { color: var(--text3); }
+    .lo-field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+
+    .lo-btn {
+      width: 100%; margin-top: 4px; padding: 12px;
+      background: var(--green); color: #000;
+      border: none; border-radius: 9px;
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s, transform .1s;
+      letter-spacing: -.1px;
+      animation: glowPulse 2.8s ease infinite;
+    }
+    .lo-btn:hover  { background: #4ade80; transform: translateY(-1px); }
+    .lo-btn:active { transform: scale(.98); }
+    .lo-btn:disabled { opacity: .55; cursor: not-allowed; animation: none; }
+
+    .lo-spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(0,0,0,.25); border-top-color: #000;
+      border-radius: 50%; animation: spin .6s linear infinite;
+    }
+
+    .lo-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 20px 0 0; font-size: 11px; color: var(--text3);
+    }
+    .lo-divider::before, .lo-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--bd);
+    }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--bd);
+      padding: 0 40px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(8,8,8,.9);
+      backdrop-filter: blur(20px) saturate(1.6);
+      position: sticky; top: 0; z-index: 10;
+      animation: slideDown .4s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .logo {
+      font-size: 15px; font-weight: 700; letter-spacing: -.4px;
+      color: var(--text); text-decoration: none;
+      display: flex; align-items: center;
+      transition: opacity .18s;
+    }
+    .logo:hover { opacity: .72; }
+    .logo-dot { color: var(--green); }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-meta  { font-size: 12px; color: var(--text3); }
+
+    .user-pill { display: none; align-items: center; gap: 10px; }
+    .user-pill.visible { display: flex; }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--green); color: #000;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .user-name   { font-size: 13px; font-weight: 500; }
+    .conta-link {
+      font-size: 12px; color: var(--text2); text-decoration: none;
+      padding: 5px 10px; border: 1px solid var(--bd); border-radius: 6px;
+      transition: color .15s, border-color .15s;
+    }
+    .conta-link:hover { color: var(--green); border-color: rgba(34,197,94,.35); }
+    .logout-link {
+      font-size: 12px; color: var(--text3); background: none; border: none;
+      cursor: pointer; font-family: inherit; transition: color .15s; padding: 0;
+    }
+    .logout-link:hover { color: var(--red); }
+
+    /* ── FILTERS ── */
+    .filters {
+      padding: 0 40px; height: 48px;
+      display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--bd);
+      background: rgba(8,8,8,.78);
+      backdrop-filter: blur(16px);
+      position: sticky; top: 58px; z-index: 9;
+      animation: slideDown .4s .06s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .filter-label { font-size: 12px; color: var(--text3); margin-right: 6px; }
+
+    .filter-btn {
+      padding: 5px 14px; height: 30px;
+      border: 1px solid var(--bd); border-radius: 7px;
+      background: transparent; font-family: inherit;
+      font-size: 12px; font-weight: 500; color: var(--text2);
+      cursor: pointer; transition: all .18s;
+    }
+    .filter-btn:hover { border-color: var(--bdHi); color: var(--text); background: rgba(255,255,255,.04); }
+    .filter-btn.active {
+      background: var(--green); color: #000;
+      border-color: var(--green); font-weight: 600;
+      box-shadow: 0 0 16px rgba(34,197,94,.28);
+    }
+
+    .sep { flex: 1; }
+
+    .toggle-lbl {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--text2); cursor: pointer; user-select: none;
+      transition: color .15s;
+    }
+    .toggle-lbl:hover { color: var(--text); }
+    .toggle-lbl input { accent-color: var(--green); cursor: pointer; }
+
+    /* ── MAIN ── */
+    main { max-width: 1120px; margin: 0 auto; padding: 28px 40px 80px; position: relative; z-index: 1; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--text3); text-transform: uppercase; letter-spacing: .7px;
+      padding: 10px 14px; border-bottom: 1px solid var(--bd);
+      white-space: nowrap; cursor: pointer; user-select: none;
+      transition: color .15s;
+    }
+    thead th:hover  { color: var(--text2); }
+    thead th.sorted { color: var(--green); }
+    thead th .si    { margin-left: 4px; opacity: .4; font-size: 10px; }
+    thead th.sorted .si { opacity: 1; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--bd);
+      opacity: 0;
+      animation: rowIn .32s cubic-bezier(.22,1,.36,1) forwards;
+      transition: background .12s;
+      position: relative;
+    }
+    tbody tr::before {
+      content: ''; position: absolute;
+      left: 0; top: 0; bottom: 0; width: 2px;
+      background: var(--green);
+      opacity: 0; transform: scaleY(.4);
+      transition: opacity .18s, transform .24s cubic-bezier(.22,1,.36,1);
+    }
+    tbody tr:hover  { background: var(--gl); }
+    tbody tr:hover::before { opacity: 1; transform: scaleY(1); }
+    tbody tr.hidden { display: none; }
+
+    tbody td { padding: 15px 14px; vertical-align: middle; }
+
+    .rank { font-size: 13px; font-weight: 400; color: var(--text3); width: 32px; font-variant-numeric: tabular-nums; }
+    .name-cell { min-width: 200px; }
+
+    .name-link {
+      font-weight: 600; font-size: 13px; color: var(--text);
+      text-decoration: none; position: relative; display: inline-block;
+      transition: color .15s;
+    }
+    .name-link::after {
+      content: ''; position: absolute; left: 0; bottom: -1px;
+      width: 0; height: 1.5px; background: var(--green);
+      transition: width .22s cubic-bezier(.22,1,.36,1);
+    }
+    .name-link:hover { color: var(--green); }
+    .name-link:hover::after { width: 100%; }
+
+    .name-plain { font-weight: 600; font-size: 13px; color: var(--text2); }
+    .desc-text  { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    .badge {
+      display: inline-block; padding: 2px 9px; border-radius: 5px;
+      font-size: 11px; font-weight: 500;
+      background: rgba(255,255,255,.05); color: var(--text2);
+      border: 1px solid var(--bd);
+    }
+    .badge.hotmart   { background: rgba(251,146,60,.1);  color: #fb923c; border-color: rgba(251,146,60,.15); }
+    .badge.kiwify    { background: rgba(34,197,94,.1);   color: #4ade80; border-color: rgba(34,197,94,.15); }
+    .badge.eduzz     { background: rgba(96,165,250,.1);  color: #60a5fa; border-color: rgba(96,165,250,.15); }
+    .badge.monetizze { background: rgba(167,139,250,.1); color: #a78bfa; border-color: rgba(167,139,250,.15); }
+
+    .mrr-val { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    .growth { font-size: 12px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; cursor: default; }
+    .growth.pos { color: var(--green); }
+    .growth.neg { color: var(--red); }
+
+    .tag-hot {
+      display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: .3px; text-transform: uppercase; vertical-align: middle; margin-left: 7px;
+      background: rgba(251,191,36,.1); color: #fbbf24; border: 1px solid rgba(251,191,36,.18);
+    }
+    .tag-new {
+      display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: .3px; text-transform: uppercase; vertical-align: middle; margin-left: 7px;
+      background: rgba(96,165,250,.1); color: #60a5fa; border: 1px solid rgba(96,165,250,.18);
+    }
+
+    .founder { font-size: 12px; color: var(--text3); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--bd);
+      padding: 20px 40px; text-align: center;
+      font-size: 12px; color: var(--text3);
+      background: var(--bg);
+    }
+    footer a { color: var(--text3); text-decoration: none; transition: color .15s; }
+    footer a:hover { color: var(--green); }
+  </style>
+</head>
+<body>
+
+<div id="loginOverlay" class="lo">
+  <div class="lo-card">
+    <p class="lo-eyebrow">Lista Cursos BR</p>
+    <h1 class="lo-title">Bem-vindo de volta</h1>
+    <p class="lo-sub">Acesse sua conta para continuar</p>
+    <form id="loginForm" novalidate>
+      <div class="lo-field">
+        <label for="lemail">E-mail</label>
+        <input id="lemail" type="email" placeholder="você@email.com" autocomplete="email" />
+      </div>
+      <div class="lo-field">
+        <label for="lpass">Senha</label>
+        <input id="lpass" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button id="lbtn" class="lo-btn" type="submit">
+        <span id="lbtn-text">Entrar</span>
+      </button>
+    </form>
+    <div class="lo-divider">Acesso demonstração · nenhum dado real é armazenado</div>
+  </div>
+</div>
+
+<header>
+  <a class="logo" href="index.html">Lista Cursos<span class="logo-dot"> BR</span></a>
+  <div class="header-right">
+    <span class="header-meta">mai/2026 · 20 criadores</span>
+    <div id="userPill" class="user-pill">
+      <a href="/contabilidade" class="conta-link">Contabilidade</a>
+      <a href="/crescimento" class="conta-link">Crescimento</a>
+      <div id="userAvatar" class="user-avatar"></div>
+      <span id="userName" class="user-name"></span>
+      <button id="logoutBtn" class="logout-link">Sair</button>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="filter-label">Ordenar por</span>
+  <button class="filter-btn active" data-sort="receita">Receita</button>
+  <button class="filter-btn" data-sort="alunos">Alunos</button>
+  <button class="filter-btn" data-sort="crescimento">Crescimento</button>
+  <div class="sep"></div>
+  <label class="toggle-lbl">
+    <input type="checkbox" id="toggleAnon" checked /> Mostrar anônimos
+  </label>
+</div>
+
+<main>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th class="sorted" data-col="receita">Receita mensal <span class="si">↓</span></th>
+          <th data-col="crescimento">Crescimento <span class="si">↕</span></th>
+          <th>Criador</th>
+          <th>Nicho</th>
+          <th>Plataforma</th>
+          <th data-col="alunos">Alunos est. <span class="si">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+
+<footer>
+  <a href="#">Anunciar</a> &nbsp;·&nbsp; <a href="#">Enviar curso</a> &nbsp;·&nbsp; <a href="#">Privacidade</a>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const overlay = document.getElementById('loginOverlay');
+  function setUser(name) {
+    const init = name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    document.getElementById('userAvatar').textContent = init;
+    document.getElementById('userName').textContent   = name;
+    document.getElementById('userPill').classList.add('visible');
+  }
+  const saved = sessionStorage.getItem('lcbr_user');
+  if (saved) { overlay.style.display = 'none'; setUser(saved); }
+
+  document.getElementById('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const em = document.getElementById('lemail').value.trim();
+    const pw = document.getElementById('lpass').value.trim();
+    if (!em || !pw) return;
+    const btn  = document.getElementById('lbtn');
+    const text = document.getElementById('lbtn-text');
+    btn.disabled = true; text.textContent = '';
+    const sp = document.createElement('span'); sp.className = 'lo-spinner'; btn.appendChild(sp);
+    setTimeout(() => {
+      const raw  = em.split('@')[0].replace(/[._\-]/g,' ');
+      const name = raw[0].toUpperCase() + raw.slice(1);
+      sessionStorage.setItem('lcbr_user', name);
+      overlay.classList.add('lo-hide');
+      setUser(name);
+      setTimeout(() => overlay.style.display = 'none', 380);
+    }, 720);
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    sessionStorage.removeItem('lcbr_user'); location.reload();
+  });
+
+  let sortKey = 'receita', sortDir = 1, showAnon = true;
+  const bc = { hotmart:'hotmart', kiwify:'kiwify', eduzz:'eduzz', monetizze:'monetizze' };
+
+  function val(item, k) {
+    return k==='receita' ? item.receitaMin : k==='alunos' ? item.alunos : item.crescimento;
+  }
+  function sortBy(key) {
+    if (sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
+    render();
+  }
+  function render() {
+    const sorted = [...produtos].sort((a,b) => sortDir*(val(b,sortKey)-val(a,sortKey)));
+    const tbody  = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    const topGrower = sorted.filter(p => !p.anon).reduce((mx,p) => p.crescimento > mx.crescimento ? p : mx);
+    sorted.forEach((p, i) => {
+      if (p.anon && !showAnon) return;
+      const g    = p.crescimento;
+      const gc   = g>=0?'pos':'neg';
+      const gt   = (g>=0?'+':'')+g+'%';
+      const plat = p.plataforma[0].toUpperCase()+p.plataforma.slice(1);
+      const nHtml = p.anon
+        ? `<span class="name-plain">${p.name}</span>`
+        : `<a class="name-link" href="produto?slug=${p.slug}">${p.name}</a>`;
+      const hotBadge = (!p.anon && p === topGrower) ? `<span class="tag-hot">🔥 em alta</span>` : '';
+      const newBadge = p.novo ? `<span class="tag-new">novo</span>` : '';
+      const tipAttr  = Math.abs(g) >= 50
+        ? ` title="${g > 0 ? '🚀 Crescimento acima da média do ranking' : '⚠️ Queda acentuada'}"`
+        : '';
+      const tr = document.createElement('tr');
+      tr.style.animationDelay = (i*36)+'ms';
+      tr.innerHTML = `
+        <td class="rank">${i+1}</td>
+        <td class="name-cell">${nHtml}${hotBadge}${newBadge}${p.desc!=='—'?`<div class="desc-text">${p.desc}</div>`:''}</td>
+        <td><span class="growth ${gc}"${tipAttr}>${gt}</span></td>
+        <td class="founder">${p.founder}</td>
+        <td><span class="badge">${p.nicho}</span></td>
+        <td><span class="badge ${bc[p.plataforma]}">${plat}</span></td>
+        <td class="mrr-val">${p.alunos.toLocaleString('pt-BR')}</td>`;
+      tbody.appendChild(tr);
+    });
+    document.querySelectorAll('thead th[data-col]').forEach(th => {
+      const c=th.dataset.col, ic=th.querySelector('.si');
+      th.classList.toggle('sorted', c===sortKey);
+      ic.textContent = c===sortKey ? (sortDir===1?'↓':'↑') : '↕';
+    });
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); sortBy(b.dataset.sort);
+  }));
+  document.querySelectorAll('thead th[data-col]').forEach(th => th.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.sort===th.dataset.col));
+    sortBy(th.dataset.col);
+  }));
+  document.getElementById('toggleAnon').addEventListener('change', e => { showAnon=e.target.checked; render(); });
+
+  render();
+</script>
+<script src="chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:listamrr.com.br)",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(vercel --version)"
+    ]
+  }
+}

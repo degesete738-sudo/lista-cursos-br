@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produto — Lista Cursos BR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:    #080808;
+      --bg2:   #0f0f0f;
+      --bg3:   #161616;
+      --bd:    rgba(255,255,255,.07);
+      --bdHi:  rgba(255,255,255,.13);
+      --text:  #ebebeb;
+      --text2: #888;
+      --text3: #444;
+      --green: #22c55e;
+      --gd:    #16a34a;
+      --gl:    rgba(34,197,94,.06);
+      --gs:    rgba(34,197,94,.12);
+      --red:   #f87171;
+    }
+
+    @keyframes fadeIn    { from { opacity:0 }                              to { opacity:1 } }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-12px) } to { opacity:1; transform:none } }
+    @keyframes slideUp   { from { opacity:0; transform:translateY(14px) }  to { opacity:1; transform:none } }
+    @keyframes cardIn    { from { opacity:0; transform:translateY(30px) scale(.96) } to { opacity:1; transform:none } }
+    @keyframes fadeOut   { to   { opacity:0 } }
+    @keyframes spin      { to   { transform:rotate(360deg) } }
+    @keyframes mIn       { from { opacity:0; transform:translateY(10px) }  to { opacity:1; transform:none } }
+    @keyframes glowPulse { 0%,100% { box-shadow:0 0 0 0 rgba(34,197,94,.5) } 60% { box-shadow:0 0 0 10px rgba(34,197,94,0) } }
+    @keyframes checkDraw { from { stroke-dashoffset:40 } to { stroke-dashoffset:0 } }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(rgba(255,255,255,.022) 1px, transparent 1px);
+      background-size: 28px 28px;
+      color: var(--text);
+      font-size: 14px; line-height: 1.55;
+      animation: fadeIn .4s ease both;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: '';
+      position: fixed; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; height: 500px;
+      background: radial-gradient(ellipse 70% 100% at 50% -10%, rgba(34,197,94,.055) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── LOGIN ── */
+    .lo {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.82);
+      backdrop-filter: blur(14px) saturate(1.2);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .lo.lo-hide { animation: fadeOut .35s ease forwards; pointer-events: none; }
+
+    .lo-card {
+      background: var(--bg2); border: 1px solid var(--bdHi);
+      border-radius: 18px; padding: 44px 40px 36px;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.03);
+      animation: cardIn .45s cubic-bezier(.22,1,.36,1) both;
+    }
+    .lo-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); margin-bottom: 14px; }
+    .lo-title   { font-size: 22px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 4px; }
+    .lo-sub     { font-size: 13px; color: var(--text2); margin-bottom: 32px; }
+
+    .lo-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    .lo-field label { font-size: 12px; font-weight: 500; color: var(--text2); }
+    .lo-field input {
+      padding: 11px 14px; background: var(--bg);
+      border: 1px solid var(--bd); border-radius: 9px;
+      font-family: inherit; font-size: 13px; color: var(--text); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .lo-field input::placeholder { color: var(--text3); }
+    .lo-field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+
+    .lo-btn {
+      width: 100%; margin-top: 4px; padding: 12px;
+      background: var(--green); color: #000;
+      border: none; border-radius: 9px;
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s, transform .1s;
+      animation: glowPulse 2.8s ease infinite;
+    }
+    .lo-btn:hover  { background: #4ade80; transform: translateY(-1px); }
+    .lo-btn:active { transform: scale(.98); }
+    .lo-btn:disabled { opacity: .55; cursor: not-allowed; animation: none; }
+    .lo-spinner { width: 15px; height: 15px; border: 2px solid rgba(0,0,0,.25); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; }
+    .lo-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; font-size: 11px; color: var(--text3); }
+    .lo-divider::before, .lo-divider::after { content: ''; flex: 1; height: 1px; background: var(--bd); }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--bd); padding: 0 40px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(8,8,8,.9);
+      backdrop-filter: blur(20px) saturate(1.6);
+      position: sticky; top: 0; z-index: 10;
+      animation: slideDown .4s cubic-bezier(.22,1,.36,1) both;
+    }
+    .logo { font-size: 15px; font-weight: 700; letter-spacing: -.4px; color: var(--text); text-decoration: none; transition: opacity .18s; }
+    .logo:hover { opacity: .72; }
+    .logo-dot { color: var(--green); }
+    .user-pill { display: none; align-items: center; gap: 10px; }
+    .user-pill.visible { display: flex; }
+    .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: #000; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .user-name   { font-size: 13px; font-weight: 500; }
+    .logout-link { font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; font-family: inherit; transition: color .15s; padding: 0; }
+    .logout-link:hover { color: var(--red); }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      padding: 0 40px; height: 40px;
+      display: flex; align-items: center;
+      font-size: 12px; color: var(--text3);
+      border-bottom: 1px solid var(--bd);
+      background: rgba(8,8,8,.6);
+      backdrop-filter: blur(10px);
+    }
+    .breadcrumb a { color: var(--text3); text-decoration: none; transition: color .15s; }
+    .breadcrumb a:hover { color: var(--green); }
+    .breadcrumb span { margin: 0 7px; opacity: .4; }
+
+    /* ── MAIN ── */
+    main { max-width: 780px; margin: 0 auto; padding: 40px 40px 88px; position: relative; z-index: 1; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500; color: var(--text3); text-decoration: none;
+      margin-bottom: 32px;
+      transition: color .15s, gap .18s;
+      animation: slideUp .3s ease both;
+    }
+    .back-link:hover { color: var(--green); gap: 10px; }
+
+    /* ── HERO ── */
+    .hero { margin-bottom: 36px; animation: slideUp .32s .06s ease both; }
+    .hero-name { font-size: 28px; font-weight: 700; letter-spacing: -.6px; margin-bottom: 10px; }
+    .hero-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+    .hero-url  { font-size: 13px; color: var(--text3); text-decoration: none; transition: color .15s; }
+    .hero-url:hover { color: var(--green); }
+    .hero-founder { font-size: 13px; color: var(--text3); }
+    .hero-desc { font-size: 15px; color: var(--text2); line-height: 1.7; max-width: 580px; }
+
+    /* ── METRICS ── */
+    .metrics {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(155px,1fr));
+      gap: 1px; background: var(--bd);
+      border: 1px solid var(--bd); border-radius: 12px;
+      overflow: hidden; margin-bottom: 40px;
+    }
+    .mc {
+      background: var(--bg2); padding: 22px 20px 18px;
+      transition: background .18s, transform .22s, box-shadow .22s;
+      animation: mIn .38s ease both; cursor: default; position: relative;
+    }
+    .mc:nth-child(1) { animation-delay: .08s; }
+    .mc:nth-child(2) { animation-delay: .14s; }
+    .mc:nth-child(3) { animation-delay: .20s; }
+    .mc:nth-child(4) { animation-delay: .26s; }
+    .mc:hover { background: rgba(34,197,94,.05); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(34,197,94,.08), inset 0 1px 0 rgba(34,197,94,.1); z-index: 1; }
+
+    .mc-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+    .mc-val   { font-size: 22px; font-weight: 700; letter-spacing: -.5px; color: var(--text); margin-bottom: 5px; font-variant-numeric: tabular-nums; }
+    .mc-val.green { color: var(--green); }
+    .mc-val.red   { color: var(--red); }
+    .mc-sub { font-size: 12px; font-weight: 500; }
+    .mc-sub.pos { color: var(--green); }
+    .mc-sub.neg { color: var(--red); }
+    .mc-sub.mu  { color: var(--text3); }
+
+    /* ── DETAILS ── */
+    .sec-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 16px; animation: slideUp .3s .2s ease both; }
+
+    .details { border: 1px solid var(--bd); border-radius: 12px; overflow: hidden; background: var(--bg2); animation: slideUp .3s .25s ease both; }
+
+    .dr { display: grid; grid-template-columns: 172px 1fr; border-bottom: 1px solid var(--bd); transition: background .12s; }
+    .dr:last-child { border-bottom: none; }
+    .dr:hover { background: var(--gl); }
+
+    .dk {
+      padding: 14px 18px; font-size: 12px; font-weight: 500; color: var(--text3);
+      background: var(--bg3); border-right: 1px solid var(--bd);
+      display: flex; align-items: flex-start; padding-top: 15px;
+      transition: background .12s;
+    }
+    .dr:hover .dk { background: rgba(34,197,94,.05); }
+    .dv { padding: 14px 18px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      display: inline-block; padding: 3px 10px; border-radius: 5px;
+      font-size: 11px; font-weight: 500;
+      background: rgba(255,255,255,.05); color: var(--text3);
+      border: 1px solid var(--bd);
+      transition: background .15s, color .15s, transform .15s, border-color .15s;
+      cursor: default;
+    }
+    .tag:hover { background: var(--gl); color: var(--green); border-color: rgba(34,197,94,.2); transform: scale(1.04); }
+    .tag.s     { background: rgba(34,197,94,.1); color: #4ade80; border-color: rgba(34,197,94,.15); }
+    .tag.s:hover { background: rgba(34,197,94,.18); }
+
+    /* ── BUY BUTTON (hero) ── */
+    .buy-hero {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 20px; padding: 13px 22px;
+      background: var(--green); color: #000;
+      border: none; border-radius: 10px;
+      font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: -.1px;
+      cursor: pointer; transition: background .15s, transform .12s;
+      animation: glowPulse 2.8s ease infinite;
+    }
+    .buy-hero:hover  { background: #4ade80; transform: translateY(-1px); }
+    .buy-hero:active { transform: scale(.97); }
+    .buy-price-tag   { font-size: 12px; opacity: .75; font-weight: 600; }
+
+    /* ── STICKY BAR ── */
+    .sticky-buy {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+      background: rgba(8,8,8,.92);
+      backdrop-filter: blur(20px) saturate(1.5);
+      border-top: 1px solid var(--bd);
+      padding: 12px 40px; display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 -4px 32px rgba(0,0,0,.4);
+      transform: translateY(100%);
+      transition: transform .32s cubic-bezier(.22,1,.36,1);
+    }
+    .sticky-buy.visible { transform: none; }
+    .sticky-name  { font-size: 14px; font-weight: 600; color: var(--text); }
+    .sticky-price { font-size: 13px; color: var(--text3); margin-top: 2px; }
+    .sticky-btn {
+      padding: 11px 24px; background: var(--green); color: #000;
+      border: none; border-radius: 9px;
+      font-family: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: background .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .sticky-btn:hover  { background: #4ade80; }
+    .sticky-btn:active { transform: scale(.97); }
+
+    /* ── CHECKOUT OVERLAY ── */
+    .co-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.82);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 16px;
+      animation: fadeIn .2s ease both;
+    }
+    .co-overlay.co-hide { animation: fadeOut .3s ease forwards; pointer-events: none; }
+
+    .co-card {
+      background: var(--bg2); border: 1px solid var(--bdHi);
+      border-radius: 18px; width: 100%; max-width: 420px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.03);
+      overflow: hidden;
+      animation: cardIn .38s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .co-head {
+      padding: 22px 24px 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .co-head-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; }
+    .co-close {
+      background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px;
+      display: flex; align-items: center; border-radius: 6px; transition: color .15s, background .15s;
+    }
+    .co-close:hover { color: var(--text); background: var(--bg3); }
+
+    /* step 1 */
+    .co-plan { padding: 20px 24px 28px; }
+    .co-course-name { font-size: 16px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 18px; }
+
+    .co-price-box {
+      background: var(--bg3); border: 1px solid var(--bd); border-radius: 12px;
+      padding: 20px 22px; display: flex; align-items: flex-end; gap: 6px; margin-bottom: 20px;
+    }
+    .co-currency { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; padding-bottom: 4px; }
+    .co-amount   { font-size: 44px; font-weight: 800; color: var(--text); letter-spacing: -2px; line-height: 1; }
+    .co-period   { font-size: 13px; color: var(--text3); padding-bottom: 6px; }
+
+    .co-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; }
+    .co-features li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+    .co-features li::before {
+      content: '✓'; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--gs); color: var(--green);
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .co-cta {
+      width: 100%; padding: 14px; background: var(--text); color: var(--bg);
+      border: none; border-radius: 10px;
+      font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: -.1px;
+      cursor: pointer; transition: background .15s, transform .1s;
+    }
+    .co-cta:hover  { background: #fff; }
+    .co-cta:active { transform: scale(.98); }
+
+    .co-note { text-align: center; font-size: 11px; color: var(--text3); margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+    /* step 2 */
+    .co-pay { padding: 20px 24px 28px; }
+    .co-pay-title { font-size: 17px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 4px; }
+    .co-pay-sub   { font-size: 12px; color: var(--text3); margin-bottom: 22px; }
+
+    .co-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .co-field label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+    .co-field input {
+      padding: 11px 14px; background: var(--bg);
+      border: 1px solid var(--bd); border-radius: 9px;
+      font-family: inherit; font-size: 14px; color: var(--text); outline: none;
+      transition: border-color .15s, box-shadow .15s; letter-spacing: .5px;
+    }
+    .co-field input::placeholder { color: var(--text3); }
+    .co-field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+    .co-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .co-pay-btn {
+      width: 100%; margin-top: 6px; padding: 14px;
+      background: var(--green); color: #000;
+      border: none; border-radius: 10px;
+      font-family: inherit; font-size: 15px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s, transform .1s;
+      animation: glowPulse 2.8s ease infinite;
+    }
+    .co-pay-btn:hover    { background: #4ade80; }
+    .co-pay-btn:active   { transform: scale(.98); }
+    .co-pay-btn:disabled { opacity: .7; cursor: not-allowed; transform: none; animation: none; }
+
+    .co-secure { text-align: center; font-size: 11px; color: var(--text3); margin-top: 10px; }
+    .co-spinner { width: 15px; height: 15px; border: 2px solid rgba(0,0,0,.25); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; }
+
+    /* step 3 */
+    .co-success { padding: 40px 24px 36px; text-align: center; }
+    .co-check {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--gs); border: 1px solid rgba(34,197,94,.2);
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      animation: mIn .4s .1s ease both;
+    }
+    .co-check svg {
+      color: var(--green);
+      stroke-dasharray: 40; stroke-dashoffset: 40;
+      animation: checkDraw .5s .3s cubic-bezier(.22,1,.36,1) forwards;
+    }
+    .co-suc-title { font-size: 20px; font-weight: 700; letter-spacing: -.4px; margin-bottom: 8px; animation: slideUp .3s .25s ease both; opacity: 0; animation-fill-mode: both; }
+    .co-suc-sub   { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 28px; animation: slideUp .3s .32s ease both; opacity: 0; animation-fill-mode: both; }
+    .co-suc-btn   {
+      padding: 13px 32px; background: var(--text); color: var(--bg);
+      border: none; border-radius: 10px;
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+      animation: slideUp .3s .38s ease both; opacity: 0; animation-fill-mode: both;
+    }
+    .co-suc-btn:hover { background: #fff; }
+    .co-suc-btn-sec {
+      display: block; width: 100%; margin-top: 12px;
+      padding: 12px 32px; background: transparent; color: var(--green);
+      border: 1px solid rgba(34,197,94,.35); border-radius: 10px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .15s, border-color .15s;
+      animation: slideUp .3s .44s ease both; opacity: 0; animation-fill-mode: both;
+    }
+    .co-suc-btn-sec:hover { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.6); }
+
+    /* ── FOOTER ── */
+    footer { border-top: 1px solid var(--bd); padding: 20px 40px 80px; text-align: center; font-size: 12px; color: var(--text3); background: var(--bg); }
+    footer a { color: var(--text3); text-decoration: none; transition: color .15s; }
+    footer a:hover { color: var(--green); }
+
+    .not-found { text-align: center; padding: 80px 32px; color: var(--text3); }
+    .not-found h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div id="loginOverlay" class="lo">
+  <div class="lo-card">
+    <p class="lo-eyebrow">Lista Cursos BR</p>
+    <h1 class="lo-title">Bem-vindo de volta</h1>
+    <p class="lo-sub">Acesse sua conta para continuar</p>
+    <form id="loginForm" novalidate>
+      <div class="lo-field">
+        <label for="lemail">E-mail</label>
+        <input id="lemail" type="email" placeholder="você@email.com" autocomplete="email" />
+      </div>
+      <div class="lo-field">
+        <label for="lpass">Senha</label>
+        <input id="lpass" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button id="lbtn" class="lo-btn" type="submit">
+        <span id="lbtn-text">Entrar</span>
+      </button>
+    </form>
+    <div class="lo-divider">Acesso demonstração · nenhum dado real é armazenado</div>
+  </div>
+</div>
+
+<header>
+  <a class="logo" href="index.html">Lista Cursos<span class="logo-dot"> BR</span></a>
+  <div id="userPill" class="user-pill">
+    <div id="userAvatar" class="user-avatar"></div>
+    <span id="userName" class="user-name"></span>
+    <button id="logoutBtn" class="logout-link">Sair</button>
+  </div>
+</header>
+
+<div class="breadcrumb">
+  <a href="index.html">Lista Cursos BR</a>
+  <span>›</span>
+  <span id="bc-name">Produto</span>
+</div>
+
+<main id="main">
+  <div class="not-found"><h2>Carregando...</h2></div>
+</main>
+
+<footer>
+  <a href="#">Anunciar</a> &nbsp;·&nbsp; <a href="#">Enviar curso</a> &nbsp;·&nbsp; <a href="#">Privacidade</a>
+</footer>
+
+<!-- STICKY BUY BAR -->
+<div class="sticky-buy" id="stickyBar">
+  <div>
+    <div class="sticky-name" id="stickyName">—</div>
+    <div class="sticky-price">€ 34,00 / mês · cancele quando quiser</div>
+  </div>
+  <button class="sticky-btn" id="stickyBuyBtn">Assinar agora →</button>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div id="coModal" class="co-overlay" style="display:none">
+  <div class="co-card">
+    <div id="coStep1">
+      <div class="co-head">
+        <span class="co-head-title">Plano Mensal</span>
+        <button class="co-close" id="coClose1" aria-label="Fechar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="co-plan">
+        <p class="co-course-name" id="coPlanName">—</p>
+        <div class="co-price-box">
+          <span class="co-currency">€</span>
+          <span class="co-amount">34</span>
+          <span class="co-period">,00&nbsp;/&nbsp;mês</span>
+        </div>
+        <ul class="co-features">
+          <li>Acesso completo a todos os módulos</li>
+          <li>Atualizações e novos conteúdos incluídos</li>
+          <li>Certificado de conclusão reconhecido</li>
+          <li>Suporte direto com o criador</li>
+          <li>Comunidade exclusiva de alunos</li>
+        </ul>
+        <button class="co-cta" id="coGoPayBtn">Continuar para pagamento →</button>
+        <p class="co-note">🔒 Ambiente seguro · Cancele quando quiser</p>
+      </div>
+    </div>
+    <div id="coStep2" style="display:none">
+      <div class="co-head">
+        <span class="co-head-title">Dados de pagamento</span>
+        <button class="co-close" id="coClose2" aria-label="Fechar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="co-pay">
+        <h2 class="co-pay-title">Cartão de crédito</h2>
+        <p class="co-pay-sub">Você será cobrado € 34,00 por mês</p>
+        <div class="co-field">
+          <label>Número do cartão</label>
+          <input id="coCard" type="text" placeholder="1234 5678 9012 3456" maxlength="19" inputmode="numeric" />
+        </div>
+        <div class="co-field-row">
+          <div class="co-field">
+            <label>Validade</label>
+            <input id="coExpiry" type="text" placeholder="MM/AA" maxlength="5" inputmode="numeric" />
+          </div>
+          <div class="co-field">
+            <label>CVV</label>
+            <input id="coCvv" type="text" placeholder="123" maxlength="4" inputmode="numeric" />
+          </div>
+        </div>
+        <div class="co-field">
+          <label>Nome no cartão</label>
+          <input id="coName" type="text" placeholder="Seu nome completo" autocomplete="cc-name" />
+        </div>
+        <button class="co-pay-btn" id="coPayBtn">
+          <span id="coPayText">Finalizar compra · € 34,00/mês</span>
+        </button>
+        <p class="co-secure">🔒 Pagamento criptografado e seguro</p>
+      </div>
+    </div>
+    <div id="coStep3" style="display:none">
+      <div class="co-success">
+        <div class="co-check">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 class="co-suc-title">Assinatura confirmada! 🎉</h2>
+        <p class="co-suc-sub">Seu acesso a <strong id="coSucName">—</strong> foi ativado.<br>Você receberá o e-mail de boas-vindas em instantes.</p>
+        <button class="co-suc-btn" id="coSucClose">Começar agora →</button>
+        <button class="co-suc-btn-sec" id="coContaBtn">Ativar Plataforma Contábil — €15/mês</button>
+        <button class="co-suc-btn-sec" id="coCrescBtn">Ativar Plataforma de Crescimento — €15/mês</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+  /* LOGIN */
+  const overlay = document.getElementById('loginOverlay');
+  function setUser(name) {
+    const init = name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    document.getElementById('userAvatar').textContent = init;
+    document.getElementById('userName').textContent   = name;
+    document.getElementById('userPill').classList.add('visible');
+  }
+  const saved = sessionStorage.getItem('lcbr_user');
+  if (saved) { overlay.style.display='none'; setUser(saved); }
+
+  document.getElementById('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const em = document.getElementById('lemail').value.trim();
+    const pw = document.getElementById('lpass').value.trim();
+    if (!em || !pw) return;
+    const btn=document.getElementById('lbtn'), text=document.getElementById('lbtn-text');
+    btn.disabled=true; text.textContent='';
+    const sp=document.createElement('span'); sp.className='lo-spinner'; btn.appendChild(sp);
+    setTimeout(() => {
+      const raw=em.split('@')[0].replace(/[._\-]/g,' ');
+      const name=raw[0].toUpperCase()+raw.slice(1);
+      sessionStorage.setItem('lcbr_user',name);
+      overlay.classList.add('lo-hide'); setUser(name);
+      setTimeout(()=>overlay.style.display='none', 380);
+    }, 720);
+  });
+  document.getElementById('logoutBtn').addEventListener('click',()=>{sessionStorage.removeItem('lcbr_user');location.reload();});
+
+  /* PRODUCT */
+  const slug    = new URLSearchParams(window.location.search).get('slug');
+  const produto = produtos.find(p => p.slug === slug);
+  const main    = document.getElementById('main');
+
+  if (!produto) {
+    main.innerHTML = `<div class="not-found"><h2>Produto não encontrado</h2><p style="margin-top:8px"><a href="index.html" style="color:var(--green)">← Voltar para a lista</a></p></div>`;
+  } else {
+    document.title = produto.name + ' — Lista Cursos BR';
+    document.getElementById('bc-name').textContent = produto.name;
+
+    const g  = produto.crescimento;
+    const gc = g>=0?'pos':'neg';
+    const gt = (g>=0?'+':'')+g+'%';
+
+    const urlHtml  = produto.url
+      ? `<a class="hero-url" href="https://${produto.url}" target="_blank" rel="noopener">${produto.url} ↗</a>` : '';
+    const stackHtml = produto.techStack.length
+      ? produto.techStack.map(t=>`<span class="tag s">${t}</span>`).join('')
+      : `<span style="color:var(--text3);font-size:13px">—</span>`;
+    const tagsHtml = produto.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+    const descHtml = produto.proposta!=='—' ? `<p class="hero-desc">${produto.proposta}</p>` : '';
+
+    main.innerHTML = `
+      <a class="back-link" href="index.html">← Voltar para a lista</a>
+      <div class="hero">
+        <h1 class="hero-name">${produto.name}</h1>
+        <div class="hero-meta">${urlHtml}<span class="hero-founder">por ${produto.founder}</span></div>
+        ${descHtml}
+        <button class="buy-hero" id="heroBuyBtn">
+          Assinar agora &nbsp;<span class="buy-price-tag">€ 34,00 / mês</span>
+        </button>
+      </div>
+      <div class="metrics">
+        <div class="mc">
+          <div class="mc-label">MRR</div>
+          <div class="mc-val">${produto.mrr}</div>
+          <div class="mc-sub ${gc}">${gt} este mês</div>
+        </div>
+        <div class="mc">
+          <div class="mc-label">Receita total</div>
+          <div class="mc-val">${produto.receitaTotal}</div>
+          <div class="mc-sub mu">acumulado</div>
+        </div>
+        <div class="mc">
+          <div class="mc-label">Alunos est.</div>
+          <div class="mc-val">${produto.alunos.toLocaleString('pt-BR')}</div>
+          <div class="mc-sub mu">total</div>
+        </div>
+        <div class="mc">
+          <div class="mc-label">Crescimento</div>
+          <div class="mc-val ${g>=0?'green':'red'}">${gt}</div>
+          <div class="mc-sub mu">mês a mês</div>
+        </div>
+      </div>
+      <p class="sec-title">Detalhes do produto</p>
+      <div class="details">
+        <div class="dr"><div class="dk">Nicho</div><div class="dv">${produto.nicho}</div></div>
+        <div class="dr"><div class="dk">Proposta de valor</div><div class="dv">${produto.proposta!=='—'?produto.proposta:'—'}</div></div>
+        <div class="dr"><div class="dk">Público-alvo</div><div class="dv">${produto.publico}</div></div>
+        <div class="dr"><div class="dk">Problema resolvido</div><div class="dv">${produto.problema}</div></div>
+        <div class="dr"><div class="dk">Modelo de negócio</div><div class="dv">${produto.modelo}</div></div>
+        <div class="dr"><div class="dk">Tech stack</div><div class="dv"><div class="tags">${stackHtml}</div></div></div>
+        <div class="dr"><div class="dk">Tags</div><div class="dv"><div class="tags">${tagsHtml}</div></div></div>
+      </div>`;
+
+    /* STICKY BAR */
+    const stickyBar = document.getElementById('stickyBar');
+    document.getElementById('stickyName').textContent = produto.name;
+    const heroBtn = document.getElementById('heroBuyBtn');
+    const obs = new IntersectionObserver(([e]) => {
+      stickyBar.classList.toggle('visible', !e.isIntersecting);
+    }, { threshold: 0 });
+    obs.observe(heroBtn);
+
+    /* CHECKOUT MODAL */
+    const modal = document.getElementById('coModal');
+    const step1 = document.getElementById('coStep1');
+    const step2 = document.getElementById('coStep2');
+    const step3 = document.getElementById('coStep3');
+
+    document.getElementById('coPlanName').textContent = produto.name;
+    document.getElementById('coSucName').textContent  = produto.name;
+
+    const openModal = () => {
+      step1.style.display = 'block';
+      step2.style.display = 'none';
+      step3.style.display = 'none';
+      modal.style.display = 'flex';
+      modal.classList.remove('co-hide');
+    };
+    const closeModal = () => {
+      modal.classList.add('co-hide');
+      setTimeout(() => { modal.style.display = 'none'; modal.classList.remove('co-hide'); }, 300);
+    };
+
+    heroBtn.addEventListener('click', openModal);
+    document.getElementById('stickyBuyBtn').addEventListener('click', openModal);
+    document.getElementById('coClose1').addEventListener('click', closeModal);
+    document.getElementById('coClose2').addEventListener('click', closeModal);
+    document.getElementById('coSucClose').addEventListener('click', closeModal);
+    document.getElementById('coContaBtn').addEventListener('click', () => {
+      window.location.assign('/contabilidade');
+    });
+    document.getElementById('coCrescBtn').addEventListener('click', () => {
+      window.location.assign('/crescimento');
+    });
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+    document.getElementById('coGoPayBtn').addEventListener('click', () => {
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+    });
+
+    document.getElementById('coCard').addEventListener('input', function() {
+      let v = this.value.replace(/\D/g,'').substring(0,16);
+      this.value = v.match(/.{1,4}/g)?.join(' ') || v;
+    });
+    document.getElementById('coExpiry').addEventListener('input', function() {
+      let v = this.value.replace(/\D/g,'');
+      if (v.length >= 3) v = v.substring(0,2) + '/' + v.substring(2,4);
+      this.value = v;
+    });
+    document.getElementById('coCvv').addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g,'').substring(0,4);
+    });
+
+    document.getElementById('coPayBtn').addEventListener('click', () => {
+      const btn  = document.getElementById('coPayBtn');
+      const text = document.getElementById('coPayText');
+      btn.disabled = true;
+      text.textContent = '';
+      const sp = document.createElement('span'); sp.className = 'co-spinner'; btn.appendChild(sp);
+      setTimeout(() => {
+        sessionStorage.setItem('lcbr_empresa', produto.name);
+        step2.style.display = 'none';
+        step3.style.display = 'block';
+      }, 1600);
+    });
+  }
+</script>
+<script src="chat.js"></script>
+</body>
+</html>
