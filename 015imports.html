@@ -383,6 +383,18 @@ if(!isMobile){
 
 
 
+document.querySelectorAll('a[href*="wa.me"]').forEach(function(link){
+  link.addEventListener('click',function(e){
+    if(/Android/i.test(navigator.userAgent)){
+      e.preventDefault();
+      var href=this.getAttribute('href');
+      var phone=(href.match(/wa\.me\/(\d+)/)||[])[1]||'';
+      var text=(href.match(/[?&]text=([^&]*)/)||[])[1]||'';
+      window.location.href='whatsapp://send?phone='+phone+'&text='+text;
+    }
+  });
+});
+
 var els=document.querySelectorAll('.reveal');
 var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:.08});
 els.forEach(function(el){obs.observe(el);});
