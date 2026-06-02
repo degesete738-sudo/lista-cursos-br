@@ -7,8 +7,10 @@
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@600,700&display=swap" rel="stylesheet">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
-  <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -861,19 +863,11 @@
     <div class="login-title">Entrar no Nexus</div>
     <div class="login-subtitle">Usa a tua conta Google para entrar.<br>Rápido, seguro e sem passwords.</div>
 
-    <!-- Contentor do botão oficial do Google (injetado pelo SDK) -->
-    <div id="google-btn-container" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px;"></div>
-
-    <!-- Fallback: mostrado se o SDK não carregar -->
-    <button class="google-btn" id="google-fallback-btn" onclick="handleGoogleLogin()" style="display:none;">
+    <!-- Firebase Google login button -->
+    <button class="google-btn" onclick="handleGoogleLogin()">
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
       Continuar com Google
     </button>
-
-    <div id="login-config-warning" style="display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--amber);text-align:left;line-height:1.6;margin-bottom:12px;">
-      ⚠️ <strong>Client ID não configurado.</strong><br>
-      Edita o código e define <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px;">GOOGLE_CLIENT_ID</code> com o teu ID real do Google Cloud Console.
-    </div>
 
     <p class="login-terms">Ao continuar, concordas com os nossos <a href="#">Termos de Serviço</a> e <a href="#">Política de Privacidade</a>.</p>
   </div>
@@ -1242,58 +1236,29 @@ const STATE = {
   notifications: [],
 };
 
-const DB_KEY = 'nexus_v2';
+/* ═══════════════════════════════════════════
+   FIREBASE CONFIG & INIT
+═══════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyD0IZDcOpon6YkBPsr43wv3SQw3f1Ygafg",
+  authDomain: "spacecall-8937d.firebaseapp.com",
+  projectId: "spacecall-8937d",
+  storageBucket: "spacecall-8937d.firebasestorage.app",
+  messagingSenderId: "984872936429",
+  appId: "1:984872936429:web:b75d95e6b64482b9097de4"
+};
+firebase.initializeApp(firebaseConfig);
+const AUTH  = firebase.auth();
+const STORE = firebase.firestore();
 
-function loadDB() {
-  try { return JSON.parse(localStorage.getItem(DB_KEY)) || {}; }
-  catch { return {}; }
-}
-function saveDB(data) {
-  localStorage.setItem(DB_KEY, JSON.stringify(data));
-}
+// In-memory cache — populated from Firestore via onSnapshot
+let db = { friends: [], pending: [], blocked: [], messages: {}, draftMsg: {} };
 
-let db = loadDB();
+// Active Firestore listeners (unsubscribe functions)
+let _unsubFriends = null;
+let _unsubMessages = {};
 
-// Ensure structure
-if (!db.friends) db.friends = [
-  { id:'f_sarah',   name:'Sarah Chen',       initials:'SC', color:'#89b4fa', status:'online',  game:'Visual Studio Code' },
-  { id:'f_marcus',  name:'Marcus Williams',  initials:'MW', color:'#a78bfa', status:'idle',    game:'Spotify' },
-  { id:'f_emma',    name:'Emma Rodriguez',   initials:'ER', color:'#f472b6', status:'online',  game:'Figma' },
-  { id:'f_jake',    name:'Jake Thompson',    initials:'JT', color:'#fbbf24', status:'offline', game:'' },
-  { id:'f_alex',    name:'Alex Kumar',       initials:'AK', color:'#4ade80', status:'online',  game:'Terminal' },
-];
-if (!db.pending)  db.pending  = [];
-if (!db.blocked)  db.blocked  = [];
-if (!db.messages) db.messages = {};
-if (!db.draftMsg) db.draftMsg = {};
-
-// Pre-seed messages for demo
-function seedMessages() {
-  if (!db.messages['f_sarah'] || db.messages['f_sarah'].length === 0) {
-    db.messages['f_sarah'] = [
-      { id:1, from:'f_sarah', text:'Hey! 👋 Terminei o módulo de deteção de ameaças. A taxa de falsos positivos caiu 40%!', time:'11:42', reactions:[{e:'🔥',n:3,mine:false},{e:'👏',n:5,mine:false}] },
-      { id:2, from:'you',     text:'Uau, isso é impressionante! Testaste contra o MITRE ATT&CK?', time:'11:45', reactions:[] },
-      { id:3, from:'f_sarah', text:'Sim — 97,2% de deteção no dataset de avaliação 🚀 Vou partilhar o relatório completo!', time:'11:46', reactions:[{e:'🚀',n:2,mine:true}] },
-      { id:4, from:'you',     text:'Sarah, és incrível 💪 Tens tempo para uma call hoje à tarde?', time:'11:52', reactions:[] },
-      { id:5, from:'f_sarah', text:'Claro! Às 15h funciona? Quero mostrar-te o novo dashboard ao vivo 😄', time:'11:53', reactions:[{e:'👍',n:1,mine:true}] },
-    ];
-  }
-  if (!db.messages['f_marcus'] || db.messages['f_marcus'].length === 0) {
-    db.messages['f_marcus'] = [
-      { id:1, from:'f_marcus', text:'Já viste o relatório de vulnerabilidades mais recente?', time:'09:10', reactions:[] },
-      { id:2, from:'you',      text:'Sim, a Emma sinalizou de manhã. É bastante sério.', time:'09:14', reactions:[] },
-      { id:3, from:'f_marcus', text:'Concordo. Vemos isso no próximo standup — consegues trazer os logs?', time:'09:15', reactions:[{e:'👍',n:1,mine:false}] },
-    ];
-  }
-  if (!db.messages['f_emma'] || db.messages['f_emma'].length === 0) {
-    db.messages['f_emma'] = [
-      { id:1, from:'f_emma', text:'Ei! Estás a gostar do novo design system? 🎨', time:'14:00', reactions:[] },
-      { id:2, from:'you',    text:'Adoro! As animações ficaram incríveis.', time:'14:02', reactions:[{e:'❤️',n:1,mine:false}] },
-    ];
-  }
-  saveDB(db);
-}
-seedMessages();
+function chatId(uid1, uid2) { return [uid1, uid2].sort().join('_'); }
 
 /* ═══════════════════════════════════════════
    NAVIGATION
@@ -1355,7 +1320,8 @@ function renderDMList(filter='') {
     friends.map(f => {
       const msgs = db.messages[f.id] || [];
       const last = msgs[msgs.length - 1];
-      const unread = msgs.filter(m => m.from !== 'you' && !m.read).length;
+      const myUid = STATE.user ? STATE.user.uid : null;
+      const unread = msgs.filter(m => m.from !== myUid && !m.read).length;
       const isActive = STATE.activeDM === f.id;
       return `
         <div class="dm-item ${isActive?'active':''}" onclick="openDM('${f.id}')" id="dm-${f.id}">
@@ -1382,21 +1348,27 @@ function openDM(friendId) {
   navTo('home');
   const f = db.friends.find(x => x.id === friendId);
   if (!f) return;
-  // Update header
   document.getElementById('chat-icon').textContent = '💬';
   document.getElementById('chat-title').textContent = f.name;
   document.getElementById('chat-topic').innerHTML =
-    `<span class="chip ${f.status}">${f.status === 'online' ? '● Online' : f.status === 'idle' ? '● Inativo' : '● Offline'}</span>`;
+    `<span class="chip ${f.status || 'online'}">${f.status === 'offline' ? '● Offline' : '● Online'}</span>`;
   document.getElementById('msg-input').placeholder = `Mensagem para ${f.name}...`;
-  // Mark messages read
-  if (db.messages[friendId]) db.messages[friendId].forEach(m => m.read = true);
-  saveDB(db);
   showView('chat');
-  renderMessages(friendId);
   renderDMList();
   updateRightSidebar();
-  // Simulate typing occasionally
-  scheduleTyping(f);
+
+  // Subscribe to real-time messages for this chat
+  if (!STATE.user) return;
+  const cid = chatId(STATE.user.uid, friendId);
+  if (_unsubMessages[friendId]) { _unsubMessages[friendId](); }
+  _unsubMessages[friendId] = STORE.collection('chats').doc(cid).collection('messages')
+    .orderBy('timestamp')
+    .onSnapshot(function(snap) {
+      db.messages[friendId] = [];
+      snap.forEach(function(doc) { db.messages[friendId].push(doc.data()); });
+      if (STATE.activeDM === friendId) renderMessages(friendId);
+      renderDMList();
+    });
 }
 
 /* ═══════════════════════════════════════════
@@ -1406,6 +1378,7 @@ function renderMessages(friendId) {
   const wrap = document.getElementById('messages-wrap');
   const msgs = db.messages[friendId] || [];
   const f = db.friends.find(x => x.id === friendId);
+  const myUid = STATE.user ? STATE.user.uid : null;
   if (!f) return;
 
   if (msgs.length === 0) {
@@ -1418,21 +1391,17 @@ function renderMessages(friendId) {
   }
 
   wrap.innerHTML = msgs.map((m,i) => {
-    const isMe = m.from === 'you';
-    const friend = isMe ? {name:'Você', initials:'YO', color:'#89b4fa'} : f;
+    const isMe = m.from === myUid;
+    const senderName     = isMe ? (STATE.user.name)     : (m.fromName     || f.name);
+    const senderInitials = isMe ? (STATE.user.initials) : (m.fromInitials || f.initials);
+    const senderColor    = isMe ? (STATE.user.color)    : (m.fromColor    || f.color);
     const showHeader = i === 0 || msgs[i-1].from !== m.from;
     return `
       <div class="msg-group" id="msg-${m.id}">
-        ${showHeader ? `<div class="msg-av" style="background:linear-gradient(135deg,${friend.color}aa,${friend.color}44);">${friend.initials}</div>` : '<div style="width:38px;flex-shrink:0;"></div>'}
+        ${showHeader ? `<div class="msg-av" style="background:linear-gradient(135deg,${senderColor}aa,${senderColor}44);">${senderInitials}</div>` : '<div style="width:38px;flex-shrink:0;"></div>'}
         <div class="msg-body">
-          ${showHeader ? `<div class="msg-meta"><span class="msg-author" style="color:${friend.color};">${friend.name}</span><span class="msg-time">${m.time}</span></div>` : ''}
+          ${showHeader ? `<div class="msg-meta"><span class="msg-author" style="color:${senderColor};">${escHtml(senderName)}</span><span class="msg-time">${m.time}</span></div>` : ''}
           <div class="msg-text">${escHtml(m.text)}</div>
-          ${m.reactions && m.reactions.length > 0 ? `
-            <div class="msg-reactions">${m.reactions.map(r => `
-              <button class="reaction-pill ${r.mine?'mine':''}" onclick="toggleReaction('${friendId}',${m.id},'${r.e}')">
-                ${r.e} ${r.n}
-              </button>`).join('')}
-            </div>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -1442,22 +1411,25 @@ function renderMessages(friendId) {
 function sendMessage() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
-  if (!text || !STATE.activeDM) return;
-  if (!db.messages[STATE.activeDM]) db.messages[STATE.activeDM] = [];
-  const id = Date.now();
+  if (!text || !STATE.activeDM || !STATE.user) return;
   const now = new Date();
-  db.messages[STATE.activeDM].push({
-    id, from:'you',
-    text, read:true,
-    time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  const cid = chatId(STATE.user.uid, STATE.activeDM);
+  const msg = {
+    id: Date.now().toString(),
+    from: STATE.user.uid,
+    fromName: STATE.user.name,
+    fromInitials: STATE.user.initials,
+    fromColor: STATE.user.color,
+    fromPicture: STATE.user.picture || null,
+    text: text,
+    time: timeStr,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     reactions: []
-  });
+  };
   input.value = '';
-  saveDB(db);
-  renderMessages(STATE.activeDM);
-  renderDMList();
-  // Simulate a reply after delay
-  scheduleReply(STATE.activeDM);
+  STORE.collection('chats').doc(cid).collection('messages').add(msg)
+    .catch(function(err) { showToast('Erro ao enviar: ' + err.message, 'error'); });
 }
 
 function handleMsgKey(e) {
@@ -1470,35 +1442,7 @@ const REPLY_TEMPLATES = [
   'Interessante perspetiva!', '💯 Totalmente de acordo.', 'Vou fazer isso já!',
 ];
 
-function scheduleReply(friendId) {
-  const f = db.friends.find(x => x.id === friendId);
-  if (!f || f.status === 'offline') return;
-  const delay = 1500 + Math.random() * 3000;
-  setTimeout(() => {
-    if (STATE.activeDM !== friendId) return;
-    showTyping(f.name);
-    setTimeout(() => {
-      hideTyping();
-      const text = REPLY_TEMPLATES[Math.floor(Math.random() * REPLY_TEMPLATES.length)];
-      if (!db.messages[friendId]) db.messages[friendId] = [];
-      const now = new Date();
-      db.messages[friendId].push({
-        id: Date.now(), from: friendId,
-        text, read: true,
-        time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
-        reactions: []
-      });
-      saveDB(db);
-      renderMessages(friendId);
-      renderDMList();
-      // Notify if user is not looking at this conversation
-      if (STATE.activeDM !== friendId || STATE.view !== 'chat') {
-        const fr = db.friends.find(x => x.id === friendId);
-        if (fr) addNotification({ type:'msg', title:`Nova mensagem de ${fr.name}`, desc: text.substring(0,60), time:'agora', color: fr.color, action:'open', friendId });
-      }
-    }, 1200 + Math.random() * 1500);
-  }, delay);
-}
+// scheduleReply removed — messages now come from real Firestore listeners
 
 function scheduleTyping(f) {
   if (f.status === 'offline') return;
@@ -1526,7 +1470,6 @@ function toggleReaction(friendId, msgId, emoji) {
   const r = msg.reactions.find(x => x.e === emoji);
   if (r) { r.mine = !r.mine; r.n += r.mine ? 1 : -1; if (r.n <= 0) msg.reactions = msg.reactions.filter(x => x !== r); }
   else msg.reactions.push({e:emoji, n:1, mine:true});
-  saveDB(db);
   renderMessages(friendId);
 }
 
@@ -1629,46 +1572,60 @@ function addFriend() {
   if (db.friends.find(f => f.name.toLowerCase() === name.toLowerCase())) {
     feedback.style.color='var(--amber)'; feedback.textContent='Este utilizador já é teu amigo!'; return;
   }
-  const colors = ['#89b4fa','#a78bfa','#f472b6','#4ade80','#fbbf24','#f87171','#22d3ee'];
-  const color = colors[Math.floor(Math.random() * colors.length)];
-  const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const pending = { id:'f_'+Date.now(), name, initials, color, status:'online', game:'' };
-  db.pending.push(pending);
-  saveDB(db);
-  input.value = '';
-  feedback.style.color = 'var(--blue)';
-  feedback.textContent = `✓ Pedido enviado para ${name}!`;
-  renderFriendsSidebar();
-  showToast(`Pedido de amizade enviado para ${name}!`);
-  addNotification({ type:'friend', title:`Pedido enviado a ${name}`, desc:`A aguardar que ${name} aceite...`, time:'agora', color });
 
-  // Simulate acceptance
-  setTimeout(() => {
-    const idx = db.pending.findIndex(p => p.id === pending.id);
-    if (idx !== -1) {
-      db.pending.splice(idx, 1);
-      db.friends.push(pending);
-      saveDB(db);
-      renderFriendsMain();
-      renderFriendsSidebar();
-      renderDMList();
-      updateRightSidebar();
-      showToast(`${name} aceitou o teu pedido! 🎉`, 'success');
-      feedback.textContent = '';
-      addNotification({ type:'friend', title:`${name} aceitou!`, desc:`Já são amigos. Começa a conversa!`, time:'agora', color, action:'open', friendId: pending.id });
+  feedback.style.color='var(--muted)'; feedback.textContent='A procurar utilizador...';
+
+  STORE.collection('users').where('name', '==', name).limit(1).get().then(function(snap) {
+    if (snap.empty) {
+      feedback.style.color='var(--red)';
+      feedback.textContent='Utilizador "'+name+'" não encontrado. Pede-lhe que partilhe o link de convite.';
+      return;
     }
-  }, 2800);
+    const friendData = snap.docs[0].data();
+    const friendUid = friendData.uid;
+    const myUid = STATE.user.uid;
+
+    const myFriendEntry = {
+      id: friendUid, uid: friendUid,
+      name: friendData.name, initials: friendData.initials,
+      color: friendData.color, picture: friendData.picture || null,
+      status: 'online'
+    };
+    const theirFriendEntry = {
+      id: myUid, uid: myUid,
+      name: STATE.user.name, initials: STATE.user.initials,
+      color: STATE.user.color, picture: STATE.user.picture || null,
+      status: 'online'
+    };
+
+    const batch = STORE.batch();
+    batch.set(STORE.collection('users').doc(myUid).collection('friends').doc(friendUid), myFriendEntry);
+    batch.set(STORE.collection('users').doc(friendUid).collection('friends').doc(myUid), theirFriendEntry);
+    return batch.commit().then(function() {
+      input.value = '';
+      feedback.style.color = 'var(--green)';
+      feedback.textContent = '✓ '+name+' adicionado como amigo!';
+      showToast(name+' adicionado! 🎉', 'success');
+      addNotification({ type:'friend', title:name+' adicionado!', desc:'Já são amigos. Começa a conversa!', time:'agora', color: STATE.user.color, action:'open', friendId: friendUid });
+    });
+  }).catch(function(err) {
+    feedback.style.color='var(--red)';
+    feedback.textContent='Erro: '+err.message;
+  });
+
 }
 
 function removeFriend(id) {
   if (!confirm('Tens a certeza que queres remover este amigo?')) return;
-  db.friends = db.friends.filter(f => f.id !== id);
-  if (STATE.activeDM === id) { STATE.activeDM = null; showView('empty'); }
-  saveDB(db);
-  renderFriendsMain();
-  renderDMList();
-  updateRightSidebar();
-  showToast('Amigo removido.');
+  if (!STATE.user) return;
+  const myUid = STATE.user.uid;
+  const batch = STORE.batch();
+  batch.delete(STORE.collection('users').doc(myUid).collection('friends').doc(id));
+  batch.delete(STORE.collection('users').doc(id).collection('friends').doc(myUid));
+  batch.commit().then(function() {
+    if (STATE.activeDM === id) { STATE.activeDM = null; showView('empty'); }
+    showToast('Amigo removido.');
+  }).catch(function(err) { showToast('Erro: ' + err.message, 'error'); });
 }
 
 /* ═══════════════════════════════════════════
@@ -1916,25 +1873,9 @@ function showToast(msg, type='success') {
 }
 
 /* ═══════════════════════════════════════════
-   AUTH  —  Google Identity Services real
-   ➜ Para ativar: substitui YOUR_CLIENT_ID pelo
-     Client ID do teu projeto no Google Cloud.
-     Regista a origem autorizada:
-     https://lista-cursos-br.vercel.app
+   AUTH  —  Firebase Auth + Google provider
 ═══════════════════════════════════════════ */
-const GOOGLE_CLIENT_ID = '119317253923-5f6k5h0848nc1oetvce53a9bc8et85nb.apps.googleusercontent.com';
-
-let _googlePayload = null; // dados vindos do JWT do Google
-
-/* ---------- utils ---------- */
-function parseJwt(token) {
-  try {
-    const b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-    return JSON.parse(decodeURIComponent(atob(b64).split('').map(function(c){
-      return '%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2);
-    }).join('')));
-  } catch(e) { return null; }
-}
+let _firebaseUser = null; // utilizador autenticado pelo Firebase
 
 function avatarColor(email) {
   var colors = ['#89b4fa','#a78bfa','#f472b6','#4ade80','#fbbf24','#f87171','#22d3ee'];
@@ -1943,46 +1884,12 @@ function avatarColor(email) {
   return colors[i % colors.length];
 }
 
-/* ---------- Google SDK init ---------- */
-function initGoogleAuth() {
-  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_CLIENT_ID') {
-    // Sem Client ID: mostra aviso e botão fallback
-    var warn = document.getElementById('login-config-warning');
-    var fb   = document.getElementById('google-fallback-btn');
-    if (warn) warn.style.display = 'block';
-    if (fb)   fb.style.display   = 'flex';
-    return;
-  }
-  if (typeof google === 'undefined') {
-    // SDK ainda não carregou, tenta de novo em 500ms
-    setTimeout(initGoogleAuth, 500);
-    return;
-  }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse,
-    auto_select: false,
-    cancel_on_tap_outside: true,
-  });
-  // Renderiza o botão oficial dentro do contentor
-  google.accounts.id.renderButton(
-    document.getElementById('google-btn-container'),
-    { theme:'filled_black', size:'large', shape:'rectangular',
-      text:'signin_with', logo_alignment:'left', width:320 }
-  );
-}
-
-/* Chamado pelo SDK quando o utilizador escolhe a conta Google */
-function handleCredentialResponse(response) {
-  var payload = parseJwt(response.credential);
-  if (!payload) { showToast('Erro ao ler dados do Google.', 'error'); return; }
-  _googlePayload = payload;
-  showStep2(payload.name || payload.email, payload.email, payload.picture || null);
-}
-
-/* Fallback: sem Client ID → pede nome manualmente */
+/* ---------- Firebase Google login ---------- */
 function handleGoogleLogin() {
-  showStep2('', '', null);
+  var provider = new firebase.auth.GoogleAuthProvider();
+  AUTH.signInWithPopup(provider).catch(function(err) {
+    showToast('Erro ao entrar: ' + err.message, 'error');
+  });
 }
 
 /* ---------- Step 2: confirmar nome ---------- */
@@ -2034,30 +1941,63 @@ function validateUsername() {
 function completeLogin() {
   if (!validateUsername()) return;
   var ui = document.getElementById('username-input');
-  if (!ui) return;
+  if (!ui || !_firebaseUser) return;
   var displayName = ui.value.trim();
-  var email   = _googlePayload ? _googlePayload.email   : '';
-  var picture = _googlePayload ? _googlePayload.picture : null;
+  var uid     = _firebaseUser.uid;
+  var email   = _firebaseUser.email || '';
+  var picture = _firebaseUser.photoURL || null;
   var color   = avatarColor(email || displayName);
   var initials= displayName.replace(/\s+/g,' ').trim().split(' ')
     .map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase();
   var token = Math.random().toString(36).substring(2,10);
 
-  STATE.loggedIn = true;
-  STATE.user = {
-    name: displayName, email: email, picture: picture,
+  var userData = {
+    uid: uid, name: displayName, email: email, picture: picture,
     initials: initials, color: color, inviteToken: token,
-    googleName: _googlePayload ? (_googlePayload.name||'') : ''
+    googleName: _firebaseUser.displayName || ''
   };
-  db.me = STATE.user;
-  saveDB(db);
+
+  STORE.collection('users').doc(uid).set(userData).then(function() {
+    _applyLogin(userData, true);
+  }).catch(function(err) {
+    showToast('Erro ao guardar perfil: ' + err.message, 'error');
+  });
+}
+
+function _applyLogin(userData, isNew) {
+  STATE.loggedIn = true;
+  STATE.user = userData;
   hideLoginModal();
   updateUserBar();
   updateFriendsLoginGate();
-  addNotification({ type:'msg', title:'Bem-vindo ao Nexus!',
-    desc:'Olá '+displayName+'! Partilha o teu link para adicionar amigos.',
-    time:'agora', color:color });
-  showToast('Bem-vindo, '+displayName+'! 🎉', 'success');
+  subscribeToFriends(userData.uid);
+  if (isNew) {
+    addNotification({ type:'msg', title:'Bem-vindo ao Nexus!',
+      desc:'Olá '+userData.name+'! Partilha o teu link para adicionar amigos.',
+      time:'agora', color: userData.color });
+    showToast('Bem-vindo, '+userData.name+'! 🎉', 'success');
+  } else {
+    showToast('Sessão restaurada. Bem-vindo, '+userData.name+'!', 'success');
+  }
+  navTo('home');
+  updateRightSidebar();
+  updateFriendsLoginGate();
+  if (STATE.pendingInviteFrom) {
+    setTimeout(function() { showInviteBanner(STATE.pendingInviteFrom); }, 800);
+  }
+}
+
+function subscribeToFriends(uid) {
+  if (_unsubFriends) _unsubFriends();
+  _unsubFriends = STORE.collection('users').doc(uid).collection('friends')
+    .onSnapshot(function(snap) {
+      db.friends = [];
+      snap.forEach(function(doc) { db.friends.push(doc.data()); });
+      renderDMList();
+      renderFriendsMain();
+      renderFriendsSidebar();
+      updateRightSidebar();
+    });
 }
 
 /* ---------- modal helpers ---------- */
@@ -2126,14 +2066,13 @@ function validateProfileName() {
 function saveProfileName() {
   if (!validateProfileName()) return;
   var ni = document.getElementById('profile-name-input');
-  if (!ni) return;
+  if (!ni || !_firebaseUser) return;
   var newName = ni.value.trim();
   var initials = newName.replace(/\s+/g,' ').trim().split(' ')
     .map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase();
   STATE.user.name     = newName;
   STATE.user.initials = initials;
-  db.me = STATE.user;
-  saveDB(db);
+  STORE.collection('users').doc(_firebaseUser.uid).update({ name: newName, initials: initials });
   updateUserBar();
   renderDMList();
   closeProfileModal();
@@ -2142,22 +2081,26 @@ function saveProfileName() {
 
 function logoutUser() {
   if (!confirm('Tens a certeza que queres terminar sessão?')) return;
-  STATE.loggedIn = false;
-  STATE.user     = null;
-  _googlePayload = null;
-  delete db.me;
-  saveDB(db);
-  closeProfileModal();
-  // Reset user bar
-  var av = document.getElementById('user-av-initials');
-  if (av) { av.textContent='?'; av.style.background=''; }
-  var un = document.getElementById('user-display-name');
-  if (un) un.textContent = 'Visitante';
-  var ut = document.getElementById('user-display-tag');
-  if (ut) ut.textContent = 'Clica para entrar';
-  updateFriendsLoginGate();
-  showLoginModal();
-  showToast('Sessão terminada.', 'success');
+  if (_unsubFriends) { _unsubFriends(); _unsubFriends = null; }
+  Object.values(_unsubMessages).forEach(function(u) { u(); });
+  _unsubMessages = {};
+  AUTH.signOut().then(function() {
+    STATE.loggedIn = false;
+    STATE.user     = null;
+    _firebaseUser  = null;
+    db.friends     = [];
+    db.messages    = {};
+    closeProfileModal();
+    var av = document.getElementById('user-av-initials');
+    if (av) { av.textContent='?'; av.style.background=''; }
+    var un = document.getElementById('user-display-name');
+    if (un) un.textContent = 'Visitante';
+    var ut = document.getElementById('user-display-tag');
+    if (ut) ut.textContent = 'Clica para entrar';
+    updateFriendsLoginGate();
+    showLoginModal();
+    showToast('Sessão terminada.', 'success');
+  });
 }
 
 function updateUserBar() {
@@ -2302,47 +2245,55 @@ function acceptFriendNotif(friendId, notifId) {
 }
 
 /* ═══════════════════════════════════════════
-   INIT
+   INIT  —  Firebase Auth state drives everything
 ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
-  // Verificar se veio de um link de convite
+  // Check for invite link params
   var urlParams = new URLSearchParams(window.location.search);
   var inviteFrom = urlParams.get('from');
-  if (inviteFrom) {
-    STATE.pendingInviteFrom = decodeURIComponent(inviteFrom);
-  }
+  if (inviteFrom) STATE.pendingInviteFrom = decodeURIComponent(inviteFrom);
 
-  // Restaurar sessão guardada
-  if (db.me && db.me.name) {
-    STATE.loggedIn = true;
-    STATE.user = db.me;
-    updateUserBar();
-    initGoogleAuth();
-    // Se veio por convite, mostrar notificação
-    if (STATE.pendingInviteFrom) {
-      setTimeout(function() {
-        showInviteBanner(STATE.pendingInviteFrom);
-      }, 1000);
-    }
-  } else {
-    delete db.me;
-    saveDB(db);
-    initGoogleAuth();
-    showLoginModal();
-    // Mostrar mensagem de convite no modal
-    if (STATE.pendingInviteFrom) {
-      var sub = document.getElementById('login-step-1').querySelector('.login-subtitle');
-      if (sub) sub.innerHTML = '<strong style="color:var(--blue);">' + escHtml(STATE.pendingInviteFrom) + '</strong> convidou-te para o Nexus!<br>Entra para aceitar o convite.';
-    }
-  }
   navTo('home');
   updateRightSidebar();
   updateFriendsLoginGate();
-  // Notificação demo de chamada perdida após 4s
-  setTimeout(function() {
-    addNotification({ type:'call', title:'Chamada perdida', desc:'Sarah Chen tentou ligar-te.', time:'há 2 min', color:'#89b4fa' });
-  }, 4000);
-  setTimeout(simulateIncomingCall, 18000);
+
+  AUTH.onAuthStateChanged(function(firebaseUser) {
+    if (!firebaseUser) {
+      // Not logged in
+      STATE.loggedIn = false;
+      STATE.user = null;
+      _firebaseUser = null;
+      showLoginModal();
+      if (STATE.pendingInviteFrom) {
+        var sub = document.getElementById('login-step-1') &&
+          document.getElementById('login-step-1').querySelector('.login-subtitle');
+        if (sub) sub.innerHTML = '<strong style="color:var(--blue);">' +
+          escHtml(STATE.pendingInviteFrom) + '</strong> convidou-te para o Nexus!<br>Entra para aceitar o convite.';
+      }
+      return;
+    }
+
+    _firebaseUser = firebaseUser;
+
+    // Check if user already has a profile in Firestore
+    STORE.collection('users').doc(firebaseUser.uid).get().then(function(doc) {
+      if (doc.exists) {
+        // Returning user — restore session
+        _applyLogin(doc.data(), false);
+      } else {
+        // New user — ask for display name
+        showLoginModal();
+        showStep2(
+          firebaseUser.displayName || firebaseUser.email,
+          firebaseUser.email,
+          firebaseUser.photoURL || null
+        );
+      }
+    }).catch(function(err) {
+      showToast('Erro ao carregar perfil: ' + err.message, 'error');
+      showLoginModal();
+    });
+  });
 });
 </script>
 </body>
