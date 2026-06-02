@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus — Connect, Call, Collaborate</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-grotesk@600,700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg:      #07070e;
+      --bg2:     #0b0b1c;
+      --bg3:     #10102a;
+      --bg4:     #16163d;
+      --blue:    #89b4fa;
+      --purple:  #a78bfa;
+      --pink:    #f472b6;
+      --green:   #4ade80;
+      --amber:   #fbbf24;
+      --red:     #f87171;
+      --text:    #e2e8f0;
+      --muted:   #8a99b0;
+      --border:  rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.12);
+      --b-dim:   rgba(137,180,250,0.12);
+      --b-brd:   rgba(137,180,250,0.25);
+      --p-dim:   rgba(167,139,250,0.12);
+      --p-brd:   rgba(167,139,250,0.25);
+      --grad:    linear-gradient(135deg,#89b4fa,#a78bfa);
+    }
+
+    html,body { height:100%; overflow:hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Satoshi', system-ui, sans-serif;
+      display:flex; flex-direction:column;
+    }
+
+    /* scrollbars */
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:4px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.16); }
+
+    /* ── ANIMATIONS ─────────────────────── */
+    @keyframes fade-in  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pulse-dot{ 0%,100%{opacity:.6} 50%{opacity:1} }
+    @keyframes speak    { 0%,100%{box-shadow:0 0 0 2px var(--blue)} 50%{box-shadow:0 0 0 4px rgba(137,180,250,.45),0 0 24px rgba(137,180,250,.2)} }
+    @keyframes typing   { 0%,80%,100%{transform:scale(0);opacity:.4} 40%{transform:scale(1);opacity:1} }
+    @keyframes ring     { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+    @keyframes slide-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes scan-bar { from{width:15%} to{width:90%} }
+
+    /* ── LAYOUT ─────────────────────────── */
+    .app {
+      display:grid;
+      grid-template-columns: 68px 256px 1fr 256px;
+      height:100vh; overflow:hidden;
+    }
+    .app.hide-right { grid-template-columns: 68px 256px 1fr 0; }
+    .app.hide-right .col-right { display:none; }
+
+    /* ── LEFT NAV ───────────────────────── */
+    .col-nav {
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      display:flex; flex-direction:column; align-items:center;
+      padding: 12px 0; gap:6px; overflow:hidden;
+    }
+    .nav-btn {
+      width:44px; height:44px; border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      background: var(--bg3); border:1px solid var(--border);
+      cursor:pointer; transition:all .2s; color:var(--muted); font-size:18px;
+      position:relative; flex-shrink:0;
+    }
+    .nav-btn:hover { border-color:var(--b-brd); color:var(--blue); background:var(--b-dim); border-radius:16px; }
+    .nav-btn.active { background:var(--grad); color:#fff; border-color:transparent; border-radius:18px; box-shadow:0 0 16px rgba(137,180,250,.3); }
+    .nav-btn .notif-dot {
+      position:absolute; top:4px; right:4px;
+      width:8px; height:8px; border-radius:50%; background:var(--red);
+      border:2px solid var(--bg);
+    }
+    .nav-sep { width:32px; height:1px; background:var(--border); margin:4px 0; flex-shrink:0; }
+    .nav-server {
+      width:44px; height:44px; border-radius:18px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .2s; font-size:14px; font-weight:700;
+      color:#fff; flex-shrink:0; position:relative;
+      font-family:'Clash Grotesk',sans-serif;
+    }
+    .nav-server:hover { border-radius:14px; }
+    .nav-add {
+      width:44px; height:44px; border-radius:50%;
+      background:var(--bg3); border:1px dashed var(--border2);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--muted); font-size:22px; font-weight:300;
+      transition:all .2s; flex-shrink:0; margin-top:auto;
+    }
+    .nav-add:hover { border-color:var(--b-brd); color:var(--blue); background:var(--b-dim); }
+
+    /* ── SIDEBAR ────────────────────────── */
+    .col-side {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .side-header {
+      padding: 16px; border-bottom:1px solid var(--border);
+      font-family:'Clash Grotesk',sans-serif; font-size:15px; font-weight:600;
+      color:var(--text); display:flex; align-items:center; justify-content:space-between;
+      flex-shrink:0; min-height:56px;
+    }
+    .side-search {
+      padding: 10px 12px; flex-shrink:0;
+    }
+    .search-box {
+      background: var(--bg3); border:1px solid var(--border);
+      border-radius:10px; display:flex; align-items:center; gap:8px;
+      padding:7px 12px;
+    }
+    .search-box input {
+      background:none; border:none; outline:none;
+      color:var(--text); font-size:13px; width:100%;
+      font-family:'Satoshi',sans-serif;
+    }
+    .search-box input::placeholder { color:var(--muted); }
+    .search-box svg { color:var(--muted); flex-shrink:0; }
+    .side-scroll { flex:1; overflow-y:auto; padding:8px; }
+    .side-cat {
+      font-size:10px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.14em; color:var(--muted);
+      padding:12px 8px 6px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .side-cat button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; transition:color .2s; }
+    .side-cat button:hover { color:var(--blue); }
+
+    /* DM Items */
+    .dm-item {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 10px; border-radius:10px; cursor:pointer;
+      transition:all .2s; position:relative; margin-bottom:2px;
+    }
+    .dm-item:hover { background:var(--bg3); }
+    .dm-item.active { background:var(--b-dim); border:1px solid var(--b-brd); }
+    .dm-av {
+      width:36px; height:36px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; color:#fff; flex-shrink:0; position:relative;
+    }
+    .dm-av .status {
+      position:absolute; bottom:0; right:0;
+      width:10px; height:10px; border-radius:50%;
+      border:2px solid var(--bg2);
+    }
+    .status.online  { background:var(--green); }
+    .status.idle    { background:var(--amber); }
+    .status.dnd     { background:var(--red); }
+    .status.offline { background:var(--muted); }
+    .dm-info { flex:1; min-width:0; }
+    .dm-name { font-size:13px; font-weight:600; color:var(--text); display:block; }
+    .dm-preview { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .dm-badge {
+      background:var(--red); color:#fff; font-size:10px; font-weight:700;
+      padding:2px 6px; border-radius:10px; flex-shrink:0;
+    }
+    .dm-actions { display:none; gap:4px; }
+    .dm-item:hover .dm-actions { display:flex; }
+    .dm-act-btn {
+      width:26px; height:26px; border-radius:8px;
+      background:var(--bg4); border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--muted); font-size:12px; transition:all .2s;
+    }
+    .dm-act-btn:hover { background:var(--b-dim); color:var(--blue); }
+
+    /* Friends nav tabs */
+    .friends-tabs {
+      display:flex; gap:4px; padding:10px 12px 0; flex-shrink:0;
+    }
+    .friends-tab {
+      padding:6px 12px; border-radius:8px; cursor:pointer;
+      font-size:12px; font-weight:600; color:var(--muted);
+      transition:all .2s; border:none; background:none;
+    }
+    .friends-tab:hover { background:var(--bg3); color:var(--text); }
+    .friends-tab.active { background:var(--b-dim); color:var(--blue); }
+
+    /* User bar */
+    .user-bar {
+      background:var(--bg); border-top:1px solid var(--border);
+      padding:10px 12px; display:flex; align-items:center; gap:10px; flex-shrink:0;
+    }
+    .user-av {
+      width:34px; height:34px; border-radius:50%;
+      background:var(--grad); display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:700; color:#fff; flex-shrink:0; position:relative;
+    }
+    .user-av::after {
+      content:''; position:absolute; bottom:0; right:0;
+      width:10px; height:10px; border-radius:50%; background:var(--green);
+      border:2px solid var(--bg);
+    }
+    .user-info { flex:1; min-width:0; }
+    .user-name { font-size:13px; font-weight:600; color:var(--text); display:block; }
+    .user-tag  { font-size:11px; color:var(--muted); }
+    .user-ctrls { display:flex; gap:4px; }
+    .ub-btn {
+      width:28px; height:28px; border-radius:8px;
+      background:none; border:none; cursor:pointer; color:var(--muted);
+      display:flex; align-items:center; justify-content:center; font-size:14px;
+      transition:all .2s;
+    }
+    .ub-btn:hover { background:var(--bg3); color:var(--blue); }
+    .ub-btn.muted { color:var(--red); }
+
+    /* ── MAIN CONTENT ───────────────────── */
+    .col-main {
+      display:flex; flex-direction:column; overflow:hidden; position:relative;
+    }
+
+    /* View toggling */
+    .view { display:none; flex:1; flex-direction:column; overflow:hidden; animation:fade-in .25s ease; }
+    .view.active { display:flex; }
+
+    /* Main header */
+    .main-header {
+      background:var(--bg2); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 16px; gap:12px;
+      min-height:56px; flex-shrink:0;
+    }
+    .main-header-icon { font-size:18px; }
+    .main-header-title {
+      font-family:'Clash Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--text);
+    }
+    .main-header-sep { width:1px; height:20px; background:var(--border2); }
+    .main-header-topic { font-size:13px; color:var(--muted); flex:1; }
+    .main-header-actions { display:flex; gap:6px; margin-left:auto; }
+    .hdr-btn {
+      display:flex; align-items:center; gap:6px;
+      padding:6px 14px; border-radius:8px;
+      background:var(--bg3); border:1px solid var(--border);
+      color:var(--text); font-size:13px; font-weight:500; cursor:pointer;
+      transition:all .2s; font-family:'Satoshi',sans-serif;
+    }
+    .hdr-btn:hover { background:var(--bg4); border-color:var(--b-brd); color:var(--blue); }
+    .hdr-btn.call-btn { background:var(--b-dim); border-color:var(--b-brd); color:var(--blue); }
+    .hdr-btn.call-btn:hover { background:var(--blue); color:#07070e; }
+    .hdr-icon-btn {
+      width:32px; height:32px; border-radius:8px;
+      background:none; border:none; cursor:pointer; color:var(--muted);
+      display:flex; align-items:center; justify-content:center; font-size:16px;
+      transition:all .2s;
+    }
+    .hdr-icon-btn:hover { background:var(--bg3); color:var(--blue); }
+
+    /* ── CHAT VIEW ──────────────────────── */
+    #view-chat .messages-wrap {
+      flex:1; overflow-y:auto; padding:16px;
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .msg-group { display:flex; gap:12px; padding:4px 0; border-radius:8px; }
+    .msg-group:hover { background:rgba(255,255,255,0.015); }
+    .msg-av {
+      width:38px; height:38px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; color:#fff; flex-shrink:0; margin-top:2px;
+    }
+    .msg-body { flex:1; }
+    .msg-meta { display:flex; align-items:baseline; gap:8px; margin-bottom:3px; }
+    .msg-author { font-size:14px; font-weight:700; }
+    .msg-time   { font-size:11px; color:var(--muted); }
+    .msg-text   { font-size:14px; color:var(--text); line-height:1.5; word-break:break-word; }
+    .msg-text a { color:var(--blue); }
+    .msg-reactions { display:flex; gap:4px; margin-top:5px; flex-wrap:wrap; }
+    .reaction-pill {
+      background:var(--bg3); border:1px solid var(--border2);
+      border-radius:8px; padding:2px 8px; font-size:12px;
+      cursor:pointer; transition:all .2s; color:var(--muted);
+      display:flex; align-items:center; gap:4px;
+    }
+    .reaction-pill:hover { background:var(--b-dim); border-color:var(--b-brd); color:var(--blue); }
+    .reaction-pill.mine { background:var(--b-dim); border-color:var(--b-brd); color:var(--blue); }
+
+    /* Typing indicator */
+    .typing-row {
+      padding:4px 16px 8px;
+      display:flex; align-items:center; gap:8px;
+      font-size:12px; color:var(--muted); min-height:28px;
+    }
+    .typing-dots { display:flex; gap:3px; }
+    .typing-dots span {
+      width:5px; height:5px; border-radius:50%; background:var(--muted);
+      animation:typing 1.4s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2){animation-delay:.15s}
+    .typing-dots span:nth-child(3){animation-delay:.3s}
+
+    /* Message input */
+    .msg-input-area {
+      padding:0 16px 16px; flex-shrink:0;
+    }
+    .msg-input-box {
+      background:var(--bg3); border:1px solid var(--border2);
+      border-radius:14px; display:flex; align-items:center; gap:8px; padding:8px 12px;
+      transition:border-color .2s;
+    }
+    .msg-input-box:focus-within { border-color:var(--b-brd); }
+    .msg-attach-btn {
+      width:30px; height:30px; border-radius:50%;
+      background:var(--bg4); border:none; cursor:pointer;
+      color:var(--muted); font-size:18px; display:flex; align-items:center; justify-content:center;
+      transition:all .2s; flex-shrink:0;
+    }
+    .msg-attach-btn:hover { background:var(--b-dim); color:var(--blue); }
+    .msg-input-box input {
+      flex:1; background:none; border:none; outline:none;
+      color:var(--text); font-size:14px; font-family:'Satoshi',sans-serif;
+    }
+    .msg-input-box input::placeholder { color:var(--muted); }
+    .msg-input-actions { display:flex; gap:4px; }
+    .msg-icon-btn {
+      background:none; border:none; cursor:pointer;
+      color:var(--muted); font-size:16px;
+      width:28px; height:28px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center; transition:all .2s;
+    }
+    .msg-icon-btn:hover { background:var(--bg4); color:var(--blue); }
+    .msg-send-btn {
+      background:var(--grad); border:none; cursor:pointer;
+      color:#fff; font-size:14px;
+      width:30px; height:30px; border-radius:9px;
+      display:flex; align-items:center; justify-content:center; transition:all .2s;
+      box-shadow:0 0 12px rgba(137,180,250,.3);
+    }
+    .msg-send-btn:hover { transform:translateY(-2px); box-shadow:0 0 20px rgba(137,180,250,.5); }
+
+    /* ── FRIENDS VIEW ───────────────────── */
+    #view-friends {
+      flex:1; overflow-y:auto; padding:24px;
+    }
+    .friends-page-title {
+      font-family:'Clash Grotesk',sans-serif; font-size:22px; font-weight:600;
+      color:var(--text); margin-bottom:8px;
+    }
+    .friends-page-desc { font-size:14px; color:var(--muted); margin-bottom:24px; }
+
+    /* Add friend box */
+    .add-friend-box {
+      background:var(--bg3); border:1px solid var(--border2);
+      border-radius:16px; padding:20px; margin-bottom:28px;
+    }
+    .add-friend-box h3 {
+      font-family:'Clash Grotesk',sans-serif; font-size:13px; font-weight:600;
+      text-transform:uppercase; letter-spacing:.12em; color:var(--blue);
+      margin-bottom:10px;
+    }
+    .add-friend-box p { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
+    .add-friend-form { display:flex; gap:10px; }
+    .add-friend-input {
+      flex:1; background:var(--bg4); border:1px solid var(--border2);
+      border-radius:10px; padding:10px 14px; color:var(--text);
+      font-size:13px; font-family:'Satoshi',sans-serif; outline:none;
+      transition:border-color .2s;
+    }
+    .add-friend-input:focus { border-color:var(--b-brd); }
+    .add-friend-input::placeholder { color:var(--muted); }
+    .add-friend-btn {
+      background:var(--grad); border:none; border-radius:10px;
+      padding:10px 20px; color:#fff; font-size:13px; font-weight:700;
+      cursor:pointer; transition:all .2s; font-family:'Satoshi',sans-serif;
+      white-space:nowrap; box-shadow:0 0 16px rgba(137,180,250,.25);
+    }
+    .add-friend-btn:hover { transform:translateY(-2px); box-shadow:0 0 24px rgba(137,180,250,.4); }
+
+    /* Friend list items */
+    .friends-section-title {
+      font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.14em; color:var(--muted); margin-bottom:10px; margin-top:20px;
+    }
+    .friend-item {
+      display:flex; align-items:center; gap:14px;
+      padding:12px 14px; border-radius:12px; margin-bottom:6px;
+      background:var(--bg3); border:1px solid var(--border);
+      transition:all .2s;
+    }
+    .friend-item:hover { border-color:var(--border2); background:var(--bg4); }
+    .friend-av {
+      width:44px; height:44px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:700; color:#fff; flex-shrink:0; position:relative;
+    }
+    .friend-av .status { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; border:2px solid var(--bg3); }
+    .friend-info { flex:1; }
+    .friend-name { font-size:14px; font-weight:600; color:var(--text); }
+    .friend-status { font-size:12px; color:var(--muted); }
+    .friend-actions { display:flex; gap:8px; }
+    .friend-btn {
+      width:36px; height:36px; border-radius:10px; border:1px solid var(--border);
+      background:var(--bg4); cursor:pointer; color:var(--muted);
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; transition:all .2s;
+    }
+    .friend-btn:hover { background:var(--b-dim); border-color:var(--b-brd); color:var(--blue); }
+    .friend-btn.call:hover { background:var(--p-dim); border-color:var(--p-brd); color:var(--purple); }
+    .friend-btn.remove:hover { background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.3); color:var(--red); }
+    .pending-badge {
+      font-size:11px; padding:3px 8px; border-radius:8px;
+      background:rgba(251,191,36,.12); color:var(--amber);
+      border:1px solid rgba(251,191,36,.25); font-weight:600;
+    }
+    .empty-friends {
+      text-align:center; padding:40px 20px; color:var(--muted);
+    }
+    .empty-friends svg { opacity:.3; margin-bottom:12px; }
+    .empty-friends p { font-size:14px; }
+
+    /* ── CALL VIEW ──────────────────────── */
+    #view-call {
+      background:var(--bg); position:relative;
+    }
+    .call-header {
+      background:rgba(7,7,14,.9); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 20px; height:56px; flex-shrink:0;
+      backdrop-filter:blur(12px);
+    }
+    .call-info { display:flex; align-items:center; gap:12px; }
+    .call-name { font-family:'Clash Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--text); }
+    .call-timer { font-size:13px; color:var(--blue); background:var(--b-dim); padding:3px 10px; border-radius:8px; font-variant-numeric:tabular-nums; }
+    .call-header-right { display:flex; align-items:center; gap:10px; }
+    .call-quality { font-size:12px; color:var(--green); background:rgba(74,222,128,.1); padding:3px 10px; border-radius:8px; }
+    .call-close {
+      width:30px; height:30px; border-radius:8px; background:rgba(248,113,113,.12);
+      border:1px solid rgba(248,113,113,.25); color:var(--red); cursor:pointer;
+      display:flex; align-items:center; justify-content:center; font-size:16px;
+      transition:all .2s;
+    }
+    .call-close:hover { background:rgba(248,113,113,.25); }
+
+    /* participants grid */
+    .participants-area {
+      flex:1; display:grid; padding:16px; gap:12px; overflow:hidden;
+      align-items:center; justify-items:center;
+    }
+    .participants-area.grid-1 { grid-template-columns:1fr; }
+    .participants-area.grid-2 { grid-template-columns:1fr 1fr; }
+    .participants-area.grid-3 { grid-template-columns:1fr 1fr 1fr; }
+    .participants-area.grid-4 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+
+    .participant-tile {
+      border-radius:16px; border:2px solid var(--border);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      position:relative; overflow:hidden; width:100%; height:100%;
+      min-height:160px; transition:border-color .3s;
+    }
+    .participant-tile.speaking { animation:speak 1.5s ease-in-out infinite; border-color:var(--blue); }
+    .tile-bg { position:absolute; inset:0; }
+    .tile-avatar-large {
+      width:80px; height:80px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:28px; font-weight:700; color:#fff;
+      position:relative; z-index:1;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
+    }
+    .tile-name-bar {
+      position:absolute; bottom:0; left:0; right:0;
+      background:linear-gradient(transparent,rgba(0,0,0,.75));
+      padding:20px 12px 10px;
+      display:flex; align-items:center; justify-content:space-between;
+      z-index:2;
+    }
+    .tile-name { font-size:13px; font-weight:600; color:#fff; }
+    .tile-mic-icon { font-size:13px; opacity:.8; }
+    .tile-you-pip {
+      position:absolute; bottom:80px; right:16px;
+      width:140px; height:105px; border-radius:12px;
+      border:2px solid var(--border2); overflow:hidden;
+      background:linear-gradient(160deg,#05100a,#091a10);
+      display:flex; align-items:center; justify-content:center;
+      z-index:10; box-shadow:0 8px 24px rgba(0,0,0,.5);
+    }
+    .tile-you-pip .you-av {
+      width:40px; height:40px; border-radius:50%;
+      background:var(--grad); display:flex; align-items:center;
+      justify-content:center; font-size:14px; font-weight:700; color:#fff;
+    }
+    .tile-you-pip.cam-off { background:var(--bg3); }
+    .pip-label {
+      position:absolute; bottom:6px; left:8px;
+      font-size:10px; color:rgba(255,255,255,.7); font-weight:600;
+    }
+
+    /* Screen share overlay */
+    .screen-share-layout {
+      display:none; position:absolute; inset:56px 0 72px;
+      z-index:20; background:var(--bg); padding:12px; gap:10px;
+      grid-template-columns:1fr 180px;
+    }
+    .screen-share-layout.active { display:grid; }
+    .screen-panel {
+      background:var(--bg3); border:1px solid var(--b-brd);
+      border-radius:14px; overflow:hidden; display:flex; flex-direction:column;
+    }
+    .screen-panel-header {
+      padding:10px 14px; background:var(--b-dim);
+      font-size:12px; color:var(--blue); font-weight:600;
+      display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--b-brd);
+    }
+    .screen-content {
+      flex:1; overflow:auto; padding:16px;
+      font-family:monospace; font-size:12px; color:#a9c7f0; line-height:1.7;
+    }
+    .screen-content .ln-num { color:rgba(137,180,250,.35); margin-right:16px; user-select:none; }
+    .screen-content .kw  { color:var(--purple); }
+    .screen-content .str { color:var(--green); }
+    .screen-content .fn  { color:var(--blue); }
+    .screen-content .cm  { color:#4a5a6a; font-style:italic; }
+    .screen-side-videos { display:flex; flex-direction:column; gap:8px; }
+    .screen-side-tile {
+      flex:1; border-radius:12px; overflow:hidden; position:relative;
+      display:flex; align-items:center; justify-content:center;
+      border:2px solid var(--border);
+    }
+    .screen-side-tile.speaking { border-color:var(--blue); }
+
+    /* Call controls */
+    .call-controls {
+      background:rgba(11,11,28,.95); border-top:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      gap:10px; padding:12px 20px; height:72px; flex-shrink:0;
+      backdrop-filter:blur(12px); position:relative; z-index:15;
+    }
+    .ctrl-pill {
+      display:flex; align-items:center; gap:7px;
+      padding:9px 18px; border-radius:12px;
+      background:var(--bg3); border:1px solid var(--border);
+      color:var(--text); font-size:13px; font-weight:600;
+      cursor:pointer; transition:all .2s; font-family:'Satoshi',sans-serif;
+    }
+    .ctrl-pill .ctrl-icon { font-size:16px; }
+    .ctrl-pill:hover { background:var(--bg4); border-color:var(--b-brd); color:var(--blue); }
+    .ctrl-pill.active { background:var(--b-dim); border-color:var(--b-brd); color:var(--blue); }
+    .ctrl-pill.danger { background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.3); color:var(--red); }
+    .ctrl-pill.danger:hover { background:rgba(248,113,113,.25); }
+    .ctrl-pill.muted-state { background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.25); color:var(--red); }
+
+    /* ── EMPTY / WELCOME STATE ──────────── */
+    #view-empty {
+      align-items:center; justify-content:center; text-align:center; gap:16px;
+    }
+    .empty-icon {
+      width:80px; height:80px; border-radius:24px;
+      background:var(--grad); display:flex; align-items:center; justify-content:center;
+      font-size:36px; margin:0 auto; box-shadow:0 0 40px rgba(137,180,250,.25);
+    }
+    .empty-title { font-family:'Clash Grotesk',sans-serif; font-size:22px; font-weight:600; color:var(--text); }
+    .empty-desc { font-size:14px; color:var(--muted); max-width:320px; line-height:1.7; }
+    .empty-cta {
+      display:flex; gap:10px; justify-content:center; margin-top:4px;
+    }
+    .empty-btn {
+      padding:10px 22px; border-radius:10px; border:none;
+      font-size:13px; font-weight:700; cursor:pointer;
+      font-family:'Satoshi',sans-serif; transition:all .2s;
+    }
+    .empty-btn.primary { background:var(--grad); color:#fff; box-shadow:0 0 16px rgba(137,180,250,.3); }
+    .empty-btn.primary:hover { transform:translateY(-2px); box-shadow:0 0 24px rgba(137,180,250,.5); }
+    .empty-btn.secondary { background:var(--bg3); border:1px solid var(--border2); color:var(--text); }
+    .empty-btn.secondary:hover { border-color:var(--b-brd); color:var(--blue); }
+
+    /* ── RIGHT SIDEBAR ──────────────────── */
+    .col-right {
+      background:var(--bg2); border-left:1px solid var(--border);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .right-header {
+      padding:16px; border-bottom:1px solid var(--border);
+      font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.14em; color:var(--muted); flex-shrink:0;
+    }
+    .right-scroll { flex:1; overflow-y:auto; padding:8px; }
+    .member-item {
+      display:flex; align-items:center; gap:10px;
+      padding:7px 10px; border-radius:10px; cursor:pointer;
+      transition:background .2s; margin-bottom:2px;
+    }
+    .member-item:hover { background:var(--bg3); }
+    .member-av {
+      width:34px; height:34px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; color:#fff; position:relative; flex-shrink:0;
+    }
+    .member-av .status { position:absolute; bottom:0; right:0; width:10px; height:10px; border-radius:50%; border:2px solid var(--bg2); }
+    .member-info { flex:1; min-width:0; }
+    .member-name { font-size:13px; font-weight:500; color:var(--text); }
+    .member-role { font-size:11px; color:var(--muted); }
+    .member-role.mod { color:var(--blue); }
+    .member-offline { opacity:.4; }
+
+    /* ── TOAST ──────────────────────────── */
+    .toast {
+      position:fixed; bottom:24px; right:24px; z-index:9999;
+      background:var(--bg3); border:1px solid var(--border2);
+      border-radius:12px; padding:14px 18px;
+      font-size:13px; color:var(--text); font-weight:500;
+      transform:translateY(16px); opacity:0;
+      transition:all .3s ease; box-shadow:0 8px 32px rgba(0,0,0,.5);
+      max-width:320px; pointer-events:none;
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.success { border-color:var(--b-brd); box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(137,180,250,.1); }
+    .toast.error   { border-color:rgba(248,113,113,.3); }
+
+    /* ── INCOMING CALL OVERLAY ──────────── */
+    .incoming-call {
+      position:fixed; top:24px; right:24px; z-index:9998;
+      background:var(--bg3); border:1px solid var(--p-brd);
+      border-radius:16px; padding:16px 18px; display:none;
+      width:280px; box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 0 1px rgba(167,139,250,.1);
+      animation:slide-up .3s ease;
+    }
+    .incoming-call.show { display:block; }
+    .ic-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .ic-av { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#fff; animation:ring 1s ease-in-out infinite; }
+    .ic-info { flex:1; }
+    .ic-name { font-size:14px; font-weight:600; color:var(--text); }
+    .ic-label { font-size:12px; color:var(--purple); }
+    .ic-actions { display:flex; gap:8px; }
+    .ic-btn {
+      flex:1; padding:9px; border-radius:10px; border:none; cursor:pointer;
+      font-size:13px; font-weight:700; font-family:'Satoshi',sans-serif; transition:all .2s;
+    }
+    .ic-btn.accept { background:var(--grad); color:#fff; box-shadow:0 0 16px rgba(137,180,250,.3); }
+    .ic-btn.accept:hover { transform:translateY(-1px); }
+    .ic-btn.decline { background:rgba(248,113,113,.12); color:var(--red); border:1px solid rgba(248,113,113,.25); }
+    .ic-btn.decline:hover { background:rgba(248,113,113,.22); }
+
+    /* ── MISC ───────────────────────────── */
+    .chip {
+      display:inline-flex; align-items:center; gap:5px;
+      font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px;
+    }
+    .chip.online  { background:rgba(74,222,128,.1);  color:var(--green); }
+    .chip.idle    { background:rgba(251,191,36,.1);  color:var(--amber); }
+    .chip.offline { background:rgba(138,153,176,.1); color:var(--muted); }
+    .chip.in-call { background:var(--p-dim); color:var(--purple); }
+
+    .scan-bar-wrap { height:3px; background:rgba(255,255,255,.06); border-radius:2px; overflow:hidden; }
+    .scan-bar-fill { height:100%; background:var(--grad); border-radius:2px; animation:scan-bar 4s cubic-bezier(.4,0,.2,1) infinite alternate; width:15%; }
+
+    @media(max-width:1100px){
+      .app { grid-template-columns:68px 240px 1fr 0; }
+      .col-right { display:none; }
+    }
+    @media(max-width:780px){
+      .app { grid-template-columns:68px 1fr 0; }
+      .col-side { display:none; }
+      .col-right { display:none; }
+    }
+
+    /* ── GAMER NAV ENHANCEMENTS ─────────────── */
+    .nav-btn { position:relative; transition:all .18s cubic-bezier(.4,0,.2,1); }
+    .nav-btn.active::after {
+      content:''; position:absolute; left:-14px; top:50%; transform:translateY(-50%);
+      width:4px; height:55%; border-radius:0 3px 3px 0;
+      background:var(--blue); box-shadow:0 0 12px rgba(137,180,250,.9);
+    }
+    .nav-btn:not(.active):hover { transform:scale(1.08); }
+    .nav-btn.active { border-radius:18px; }
+
+    /* ── LOGIN MODAL ─────────────────────────── */
+    .modal-overlay {
+      position:fixed; inset:0; z-index:10000;
+      background:rgba(7,7,14,.97);
+      backdrop-filter:blur(28px);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .modal-overlay.hidden { display:none; pointer-events:none; }
+    .modal-overlay .login-card { animation:slide-up .3s cubic-bezier(.34,1.4,.64,1); }
+    .login-card {
+      background:var(--bg2); border:1px solid var(--border2);
+      border-radius:24px; padding:40px 36px;
+      width:420px; max-width:92vw;
+      box-shadow:0 40px 100px rgba(0,0,0,.85),0 0 0 1px rgba(137,180,250,.1);
+      text-align:center;
+    }
+    .login-logo {
+      width:68px; height:68px; border-radius:20px;
+      background:var(--grad);
+      display:flex; align-items:center; justify-content:center;
+      margin:0 auto 22px;
+      box-shadow:0 0 50px rgba(137,180,250,.4),0 0 0 1px rgba(137,180,250,.2);
+    }
+    .login-title {
+      font-family:'Clash Grotesk',sans-serif;
+      font-size:26px; font-weight:700; color:var(--text); margin-bottom:8px;
+    }
+    .login-subtitle { font-size:13px; color:var(--muted); margin-bottom:28px; line-height:1.65; }
+    .google-btn {
+      display:flex; align-items:center; justify-content:center; gap:12px;
+      width:100%; padding:14px 20px; border-radius:12px;
+      background:#fff; border:none; cursor:pointer;
+      font-size:14px; font-weight:600; color:#1f1f1f;
+      font-family:'Satoshi',sans-serif; transition:all .2s; margin-bottom:14px;
+      box-shadow:0 2px 16px rgba(0,0,0,.4);
+    }
+    .google-btn:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.5); }
+    .login-terms { font-size:11px; color:var(--muted); line-height:1.65; margin-top:22px; }
+    .login-terms a { color:var(--blue); text-decoration:none; }
+    .step-indicator { display:flex; gap:6px; justify-content:center; margin-bottom:24px; }
+    .step-dot {
+      width:6px; height:6px; border-radius:50%;
+      background:var(--border2); transition:all .3s;
+    }
+    .step-dot.active { background:var(--blue); width:22px; border-radius:3px; box-shadow:0 0 8px var(--blue); }
+    .google-user-preview {
+      display:flex; align-items:center; gap:12px;
+      background:var(--bg3); border:1px solid var(--border);
+      border-radius:12px; padding:12px 16px; margin-bottom:18px; text-align:left;
+    }
+    .g-avatar {
+      width:40px; height:40px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .username-field {
+      width:100%; background:var(--bg3); border:1px solid var(--border2);
+      border-radius:11px; padding:13px 16px; color:var(--text);
+      font-size:14px; font-family:'Satoshi',sans-serif; outline:none;
+      transition:border-color .2s; margin-bottom:10px;
+    }
+    .username-field:focus { border-color:var(--b-brd); }
+    .username-field::placeholder { color:var(--muted); }
+    .username-hint { font-size:11px; color:var(--muted); margin-bottom:18px; text-align:left; line-height:1.5; }
+    .login-submit {
+      width:100%; padding:14px; border-radius:12px;
+      background:var(--grad); border:none; color:#fff;
+      font-size:14px; font-weight:700; cursor:pointer;
+      font-family:'Satoshi',sans-serif; transition:all .2s;
+      box-shadow:0 0 24px rgba(137,180,250,.3);
+    }
+    .login-submit:hover { transform:translateY(-2px); box-shadow:0 0 36px rgba(137,180,250,.5); }
+
+    /* ── NOTIFICATIONS ───────────────────────── */
+    .notif-badge {
+      position:absolute; top:3px; right:3px;
+      min-width:16px; height:16px; border-radius:8px;
+      background:var(--red); color:#fff;
+      font-size:9px; font-weight:700; border:2px solid var(--bg);
+      display:flex; align-items:center; justify-content:center;
+      padding:0 3px; pointer-events:none;
+    }
+    #view-notifications { flex:1; overflow-y:auto; padding:24px; }
+    .notif-page-title {
+      font-family:'Clash Grotesk',sans-serif; font-size:22px; font-weight:600;
+      color:var(--text); margin-bottom:4px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .notif-clear-btn {
+      font-size:11px; font-weight:600; color:var(--muted);
+      background:none; border:none; cursor:pointer; margin-left:auto;
+      font-family:'Satoshi',sans-serif; transition:color .2s;
+    }
+    .notif-clear-btn:hover { color:var(--red); }
+    .notif-section-label {
+      font-size:10px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.14em; color:var(--muted); margin:16px 0 8px;
+    }
+    .notif-card {
+      display:flex; align-items:flex-start; gap:14px;
+      background:var(--bg3); border:1px solid var(--border);
+      border-radius:14px; padding:14px 16px; margin-bottom:8px;
+      transition:border-color .2s; animation:slide-up .25s ease;
+    }
+    .notif-card:hover { border-color:var(--border2); }
+    .notif-card.type-friend { border-left:3px solid var(--purple); }
+    .notif-card.type-msg    { border-left:3px solid var(--blue); }
+    .notif-card.type-call   { border-left:3px solid var(--red); }
+    .notif-icon-wrap {
+      width:42px; height:42px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; font-weight:700; color:#fff;
+    }
+    .notif-body { flex:1; min-width:0; }
+    .notif-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+    .notif-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+    .notif-time { font-size:11px; color:var(--muted); white-space:nowrap; margin-top:2px; }
+    .notif-actions { display:flex; gap:6px; margin-top:10px; }
+    .notif-btn {
+      padding:6px 14px; border-radius:8px; border:none; cursor:pointer;
+      font-size:12px; font-weight:600; font-family:'Satoshi',sans-serif; transition:all .2s;
+    }
+    .notif-btn.accept { background:var(--grad); color:#fff; }
+    .notif-btn.accept:hover { box-shadow:0 0 14px rgba(137,180,250,.4); }
+    .notif-btn.decline { background:var(--bg4); border:1px solid var(--border2); color:var(--muted); }
+    .notif-btn.decline:hover { color:var(--red); border-color:rgba(248,113,113,.3); }
+    .notif-btn.goto { background:var(--b-dim); border:1px solid var(--b-brd); color:var(--blue); }
+    .notif-btn.goto:hover { background:var(--blue); color:#07070e; }
+    .notif-empty { text-align:center; padding:60px 20px; color:var(--muted); }
+    .notif-empty-icon { font-size:48px; margin-bottom:16px; display:block; opacity:.3; }
+
+    /* ── INVITE LINK ─────────────────────────── */
+    .invite-box {
+      background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(137,180,250,.07));
+      border:1px solid var(--p-brd);
+      border-radius:14px; padding:18px; margin-bottom:20px;
+    }
+    .invite-box h4 {
+      font-family:'Clash Grotesk',sans-serif;
+      font-size:12px; font-weight:600; text-transform:uppercase;
+      letter-spacing:.12em; color:var(--purple); margin-bottom:6px;
+    }
+    .invite-box p { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.6; }
+    .invite-link-row { display:flex; gap:8px; }
+    .invite-link-display {
+      flex:1; background:var(--bg4); border:1px solid var(--border);
+      border-radius:9px; padding:9px 12px;
+      font-size:12px; color:var(--blue); font-family:monospace;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .invite-copy-btn {
+      padding:9px 16px; background:var(--p-dim); border:1px solid var(--p-brd);
+      border-radius:9px; color:var(--purple); font-size:12px; font-weight:600;
+      cursor:pointer; font-family:'Satoshi',sans-serif; transition:all .2s; flex-shrink:0;
+    }
+    .invite-copy-btn:hover { background:var(--purple); color:#07070e; }
+
+    /* ── LOGIN GATE ───────────────────────────── */
+    .login-gate {
+      background:var(--bg3); border:1px solid var(--border2);
+      border-radius:14px; padding:28px 24px; text-align:center; margin-bottom:20px;
+    }
+    .login-gate-icon { font-size:32px; margin-bottom:12px; }
+    .login-gate p { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.65; }
+    .login-gate-btn {
+      padding:11px 28px; background:var(--grad); border:none;
+      border-radius:10px; color:#fff; font-size:13px; font-weight:700;
+      cursor:pointer; font-family:'Satoshi',sans-serif;
+      box-shadow:0 0 20px rgba(137,180,250,.28); transition:all .2s;
+    }
+    .login-gate-btn:hover { transform:translateY(-2px); box-shadow:0 0 32px rgba(137,180,250,.45); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN MODAL ═════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-login" onclick="handleOverlayClick(event)">
+  <!-- Step 1: Google sign-in -->
+  <div class="login-card" id="login-step-1">
+    <div class="login-logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    </div>
+    <div class="login-title">Entrar no Nexus</div>
+    <div class="login-subtitle">Usa a tua conta Google para entrar.<br>Rápido, seguro e sem passwords.</div>
+
+    <!-- Contentor do botão oficial do Google (injetado pelo SDK) -->
+    <div id="google-btn-container" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px;"></div>
+
+    <!-- Fallback: mostrado se o SDK não carregar -->
+    <button class="google-btn" id="google-fallback-btn" onclick="handleGoogleLogin()" style="display:none;">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Continuar com Google
+    </button>
+
+    <div id="login-config-warning" style="display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--amber);text-align:left;line-height:1.6;margin-bottom:12px;">
+      ⚠️ <strong>Client ID não configurado.</strong><br>
+      Edita o código e define <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px;">GOOGLE_CLIENT_ID</code> com o teu ID real do Google Cloud Console.
+    </div>
+
+    <p class="login-terms">Ao continuar, concordas com os nossos <a href="#">Termos de Serviço</a> e <a href="#">Política de Privacidade</a>.</p>
+  </div>
+
+  <!-- Step 2: Confirmar nome -->
+  <div class="login-card" id="login-step-2" style="display:none;">
+    <div class="step-indicator">
+      <div class="step-dot"></div>
+      <div class="step-dot active"></div>
+    </div>
+    <div class="login-title">O teu nome no Nexus</div>
+    <div class="login-subtitle">Este é o nome que os teus amigos vão ver.<br>Podes mudá-lo depois nas definições.</div>
+    <div class="google-user-preview" id="google-preview">
+      <div class="g-avatar" id="gp-avatar" style="background:var(--grad);">?</div>
+      <div style="min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="gp-name">A carregar...</div>
+        <div style="font-size:11px;color:var(--muted);" id="gp-email">conta Google</div>
+      </div>
+    </div>
+    <input class="username-field" id="username-input" type="text" placeholder="Nome que queres usar no Nexus..." maxlength="32" oninput="validateUsername()">
+    <div class="username-hint" id="username-hint">Podes usar o teu nome real ou um apelido.</div>
+    <button class="login-submit" onclick="completeLogin()">Entrar no Nexus</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL EDITAR PERFIL ══════════════════ -->
+<div class="modal-overlay hidden" id="modal-profile" onclick="handleProfileOverlayClick(event)">
+  <div class="login-card" style="width:360px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+      <div style="font-family:'Clash Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text);">Editar Perfil</div>
+      <button onclick="closeProfileModal()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;">✕</button>
+    </div>
+    <!-- Avatar preview -->
+    <div id="profile-avatar-preview" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;margin:0 auto 18px;"></div>
+    <!-- Google account info (read-only) -->
+    <div id="profile-google-info" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+      <svg width="14" height="14" viewBox="0 0 48 48" style="flex-shrink:0;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);" id="profile-google-name">—</div>
+        <div style="font-size:11px;color:var(--muted);" id="profile-google-email">—</div>
+      </div>
+    </div>
+    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:block;margin-bottom:6px;text-align:left;">Nome no Nexus</label>
+    <input class="username-field" id="profile-name-input" type="text" placeholder="Teu nome..." maxlength="32" oninput="validateProfileName()">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:18px;text-align:left;" id="profile-name-hint">Este é o nome que aparece nas conversas.</div>
+    <button class="login-submit" onclick="saveProfileName()">Guardar</button>
+    <button onclick="logoutUser()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(248,113,113,.25);background:rgba(248,113,113,.08);color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:'Satoshi',sans-serif;margin-top:10px;transition:all .2s;">Terminar sessão</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+
+  <!-- ═══ LEFT NAV ═══════════════════════ -->
+  <aside class="col-nav">
+    <button class="nav-btn active" id="nav-home" onclick="navTo('home')" title="Direct Messages">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    </button>
+    <button class="nav-btn" id="nav-friends" onclick="navTo('friends')" title="Amigos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </button>
+    <button class="nav-btn" id="nav-notifications" onclick="navTo('notifications')" title="Notificações">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
+    </button>
+    <div class="nav-sep"></div>
+    <div class="nav-server" style="background:linear-gradient(135deg,#1a0a35,#2a1050);" title="Nexus HQ" onclick="alert('Server em breve!')">N</div>
+    <div class="nav-server" style="background:linear-gradient(135deg,#0a1535,#102050);" title="Dev Team" onclick="alert('Server em breve!')">D</div>
+    <div class="nav-add" title="Add Server" onclick="alert('Em breve!')">+</div>
+  </aside>
+
+  <!-- ═══ SIDEBAR ═══════════════════════ -->
+  <aside class="col-side">
+    <!-- Home sidebar: DM list -->
+    <div id="sidebar-home">
+      <div class="side-header">
+        Direct Messages
+        <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;" onclick="navTo('friends')" title="New DM">+</button>
+      </div>
+      <div class="side-search">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Find a conversation" oninput="filterDMs(this.value)">
+        </div>
+      </div>
+      <div class="side-scroll" id="dm-list"></div>
+    </div>
+
+    <!-- Friends sidebar -->
+    <div id="sidebar-friends" style="display:none;">
+      <div class="side-header">Friends</div>
+      <div class="friends-tabs">
+        <button class="friends-tab active" onclick="setFriendTab('all',this)">All</button>
+        <button class="friends-tab" onclick="setFriendTab('online',this)">Online</button>
+        <button class="friends-tab" onclick="setFriendTab('pending',this)">Pending</button>
+        <button class="friends-tab" onclick="setFriendTab('blocked',this)">Blocked</button>
+      </div>
+      <div class="side-scroll" id="friends-sidebar-list"></div>
+    </div>
+
+    <!-- User bar (always visible) -->
+    <div class="user-bar">
+      <div class="user-av" id="user-av-initials">?</div>
+      <div class="user-info">
+        <span class="user-name" id="user-display-name">Visitante</span>
+        <span class="user-tag" id="user-display-tag">Clica para entrar</span>
+      </div>
+      <div class="user-ctrls">
+        <button class="ub-btn" id="ub-mic" onclick="toggleUBMic()" title="Microfone">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <button class="ub-btn" title="Editar perfil" onclick="openProfileModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ══════════════════ -->
+  <main class="col-main">
+
+    <!-- Welcome / empty -->
+    <div id="view-empty" class="view active">
+      <div class="empty-icon">💬</div>
+      <div class="empty-title">Bem-vindo ao Nexus</div>
+      <p class="empty-desc">Selecione uma conversa, adicione amigos ou inicie uma nova chamada.</p>
+      <div class="empty-cta">
+        <button class="empty-btn primary" onclick="navTo('friends')">Adicionar Amigos</button>
+        <button class="empty-btn secondary" onclick="alert('Em breve!')">Criar Servidor</button>
+      </div>
+    </div>
+
+    <!-- Chat / DM -->
+    <div id="view-chat" class="view">
+      <div class="main-header" id="chat-header">
+        <span class="main-header-icon" id="chat-icon">💬</span>
+        <span class="main-header-title" id="chat-title">Chat</span>
+        <div class="main-header-sep"></div>
+        <span class="main-header-topic" id="chat-topic">...</span>
+        <div class="main-header-actions">
+          <button class="hdr-btn call-btn" id="call-btn" onclick="startCall()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            Chamar
+          </button>
+          <button class="hdr-icon-btn" title="Buscar">🔍</button>
+          <button class="hdr-icon-btn" id="toggle-members-btn" onclick="toggleMembers()" title="Membros">👥</button>
+        </div>
+      </div>
+      <div class="messages-wrap" id="messages-wrap"></div>
+      <div class="typing-row" id="typing-row" style="visibility:hidden;">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+        <span id="typing-text">alguém está digitando...</span>
+      </div>
+      <div class="msg-input-area">
+        <div class="msg-input-box">
+          <button class="msg-attach-btn" title="Anexar">+</button>
+          <input type="text" id="msg-input" placeholder="Mensagem..." onkeydown="handleMsgKey(event)">
+          <div class="msg-input-actions">
+            <button class="msg-icon-btn" onclick="insertEmoji()">😊</button>
+            <button class="msg-icon-btn" title="GIF">GIF</button>
+            <button class="msg-send-btn" onclick="sendMessage()" title="Enviar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Friends management -->
+    <div id="view-friends" class="view" style="overflow-y:auto; padding:24px;">
+      <h1 class="friends-page-title">Amigos</h1>
+      <p class="friends-page-desc">Gerencie os seus amigos e inicie conversas ou chamadas.</p>
+
+      <!-- Login gate (shown when not logged in) -->
+      <div class="login-gate" id="friend-login-gate">
+        <div class="login-gate-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <p>Tens de iniciar sessão para adicionar amigos<br>e partilhar o teu link de convite.</p>
+        <button class="login-gate-btn" onclick="showLoginModal()">Iniciar sessão com Google</button>
+      </div>
+
+      <!-- Add friend (shown when logged in) -->
+      <div id="friend-add-section" style="display:none;">
+        <!-- Invite link -->
+        <div class="invite-box" id="invite-box">
+          <h4>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Link de Convite
+          </h4>
+          <p>Partilha este link para que os teus amigos te possam adicionar diretamente.</p>
+          <div class="invite-link-row">
+            <div class="invite-link-display" id="invite-link-text">nexus.gg/invite/...</div>
+            <button class="invite-copy-btn" onclick="copyInviteLink()">Copiar</button>
+          </div>
+        </div>
+
+        <div class="add-friend-box">
+          <h3>Adicionar por Nome</h3>
+          <p>Podes adicionar um amigo com o nome de utilizador Nexus.<br>O nome é sensível a maiúsculas e minúsculas.</p>
+          <div class="add-friend-form">
+            <input type="text" class="add-friend-input" id="friend-input" placeholder="Nome de utilizador..." onkeydown="if(event.key==='Enter')addFriend()">
+            <button class="add-friend-btn" onclick="addFriend()">Enviar Pedido</button>
+          </div>
+          <div id="friend-input-feedback" style="margin-top:8px;font-size:12px;"></div>
+        </div>
+      </div>
+
+      <div id="friends-main-list"></div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="view-notifications" class="view">
+      <div class="notif-page-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notificações
+        <button class="notif-clear-btn" onclick="clearAllNotifications()">Limpar tudo</button>
+      </div>
+      <p class="notif-page-desc">Pedidos de amizade, mensagens e chamadas perdidas.</p>
+      <div id="notifications-list"></div>
+    </div>
+
+    <!-- Call / Meeting -->
+    <div id="view-call" class="view">
+      <div class="call-header">
+        <div class="call-info">
+          <span class="call-name" id="call-name">Chamada</span>
+          <span class="call-timer" id="call-timer">00:00</span>
+        </div>
+        <div class="call-header-right">
+          <span class="call-quality">● HD</span>
+          <button class="call-close" onclick="endCall()">✕</button>
+        </div>
+      </div>
+
+      <div class="participants-area" id="participants-area">
+        <!-- rendered by JS -->
+      </div>
+
+      <!-- PiP self view -->
+      <div class="tile-you-pip" id="pip-you">
+        <div class="you-av" id="pip-avatar">YO</div>
+        <span class="pip-label">Você</span>
+      </div>
+
+      <!-- Screen share layout (overlay) -->
+      <div class="screen-share-layout" id="screen-share-layout">
+        <div class="screen-panel">
+          <div class="screen-panel-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Você está a partilhar o ecrã
+          </div>
+          <div class="screen-content">
+<span class="cm">// nexus-client/src/hooks/useWebRTC.ts</span>
+<br><span class="kw">import</span> { useEffect, useRef, useState } <span class="kw">from</span> <span class="str">'react'</span>
+<br><span class="kw">import</span> { socket } <span class="kw">from</span> <span class="str">'@/lib/socket'</span>
+<br>
+<br><span class="kw">export function</span> <span class="fn">useWebRTC</span>(roomId: string) {
+<br>&nbsp;&nbsp;<span class="kw">const</span> [peers, setPeers] = useState&lt;Map&gt;(<span class="kw">new</span> Map())
+<br>&nbsp;&nbsp;<span class="kw">const</span> localStream = useRef&lt;MediaStream | null&gt;(<span class="kw">null</span>)
+<br>
+<br>&nbsp;&nbsp;<span class="cm">// Initialize local media stream</span>
+<br>&nbsp;&nbsp;useEffect(() =&gt; {
+<br>&nbsp;&nbsp;&nbsp;&nbsp;navigator.mediaDevices
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<span class="fn">getUserMedia</span>({ video: <span class="kw">true</span>, audio: <span class="kw">true</span> })
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.then(stream =&gt; {
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;localStream.current = stream
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">joinRoom</span>(roomId, stream)
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})
+<br>&nbsp;&nbsp;}, [roomId])
+<br>
+<br>&nbsp;&nbsp;<span class="kw">return</span> { peers, localStream }
+<br>}
+<br>
+<br><span class="cm">// ✓ Compiled in 1.2s</span>
+<br><span class="cm">// ✓ Ready on http://localhost:3000</span>
+          </div>
+        </div>
+        <div class="screen-side-videos" id="screen-side-videos">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <div class="call-controls">
+        <button class="ctrl-pill" id="ctrl-mic" onclick="toggleCallMic()">
+          <svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Silenciar
+        </button>
+        <button class="ctrl-pill" id="ctrl-cam" onclick="toggleCallCam()">
+          <svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Câmara
+        </button>
+        <button class="ctrl-pill" id="ctrl-screen" onclick="toggleScreen()">
+          <svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Partilhar
+        </button>
+        <button class="ctrl-pill" id="ctrl-hand" onclick="raiseHand()">
+          <svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+          Levantar mão
+        </button>
+        <button class="ctrl-pill" onclick="openCallChat()">
+          <svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+          Chat
+        </button>
+        <button class="ctrl-pill danger" onclick="endCall()">
+          <svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 9.54a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L10.68 13.31z"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+          Terminar
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══ RIGHT SIDEBAR ════════════════ -->
+  <aside class="col-right" id="col-right">
+    <div class="right-header" id="right-header">MEMBROS</div>
+    <div class="right-scroll" id="right-list"></div>
+  </aside>
+
+</div>
+
+<!-- Incoming call overlay -->
+<div class="incoming-call" id="incoming-call">
+  <div class="ic-header">
+    <div class="ic-av" id="ic-av"></div>
+    <div class="ic-info">
+      <div class="ic-name" id="ic-name"></div>
+      <div class="ic-label">📞 Chamada recebida...</div>
+    </div>
+  </div>
+  <div class="ic-actions">
+    <button class="ic-btn accept" onclick="acceptIncomingCall()">✓ Aceitar</button>
+    <button class="ic-btn decline" onclick="declineCall()">✕ Recusar</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   STATE & DATA
+═══════════════════════════════════════════ */
+const STATE = {
+  nav: 'home',
+  view: 'empty',
+  activeDM: null,
+  inCall: false,
+  callFriend: null,
+  mic: true,
+  camera: true,
+  screen: false,
+  hand: false,
+  membersVisible: true,
+  ubMic: true,
+  friendTab: 'all',
+  callSeconds: 0,
+  callInterval: null,
+  speakInterval: null,
+  typingTimeout: null,
+  incomingFriend: null,
+  // Auth
+  loggedIn: false,
+  user: null,       // { name, email, initials, color, inviteToken }
+  // Notifications
+  notifications: [],
+};
+
+const DB_KEY = 'nexus_v2';
+
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveDB(data) {
+  localStorage.setItem(DB_KEY, JSON.stringify(data));
+}
+
+let db = loadDB();
+
+// Ensure structure
+if (!db.friends) db.friends = [
+  { id:'f_sarah',   name:'Sarah Chen',       initials:'SC', color:'#89b4fa', status:'online',  game:'Visual Studio Code' },
+  { id:'f_marcus',  name:'Marcus Williams',  initials:'MW', color:'#a78bfa', status:'idle',    game:'Spotify' },
+  { id:'f_emma',    name:'Emma Rodriguez',   initials:'ER', color:'#f472b6', status:'online',  game:'Figma' },
+  { id:'f_jake',    name:'Jake Thompson',    initials:'JT', color:'#fbbf24', status:'offline', game:'' },
+  { id:'f_alex',    name:'Alex Kumar',       initials:'AK', color:'#4ade80', status:'online',  game:'Terminal' },
+];
+if (!db.pending)  db.pending  = [];
+if (!db.blocked)  db.blocked  = [];
+if (!db.messages) db.messages = {};
+if (!db.draftMsg) db.draftMsg = {};
+
+// Pre-seed messages for demo
+function seedMessages() {
+  if (!db.messages['f_sarah'] || db.messages['f_sarah'].length === 0) {
+    db.messages['f_sarah'] = [
+      { id:1, from:'f_sarah', text:'Hey! 👋 Terminei o módulo de deteção de ameaças. A taxa de falsos positivos caiu 40%!', time:'11:42', reactions:[{e:'🔥',n:3,mine:false},{e:'👏',n:5,mine:false}] },
+      { id:2, from:'you',     text:'Uau, isso é impressionante! Testaste contra o MITRE ATT&CK?', time:'11:45', reactions:[] },
+      { id:3, from:'f_sarah', text:'Sim — 97,2% de deteção no dataset de avaliação 🚀 Vou partilhar o relatório completo!', time:'11:46', reactions:[{e:'🚀',n:2,mine:true}] },
+      { id:4, from:'you',     text:'Sarah, és incrível 💪 Tens tempo para uma call hoje à tarde?', time:'11:52', reactions:[] },
+      { id:5, from:'f_sarah', text:'Claro! Às 15h funciona? Quero mostrar-te o novo dashboard ao vivo 😄', time:'11:53', reactions:[{e:'👍',n:1,mine:true}] },
+    ];
+  }
+  if (!db.messages['f_marcus'] || db.messages['f_marcus'].length === 0) {
+    db.messages['f_marcus'] = [
+      { id:1, from:'f_marcus', text:'Já viste o relatório de vulnerabilidades mais recente?', time:'09:10', reactions:[] },
+      { id:2, from:'you',      text:'Sim, a Emma sinalizou de manhã. É bastante sério.', time:'09:14', reactions:[] },
+      { id:3, from:'f_marcus', text:'Concordo. Vemos isso no próximo standup — consegues trazer os logs?', time:'09:15', reactions:[{e:'👍',n:1,mine:false}] },
+    ];
+  }
+  if (!db.messages['f_emma'] || db.messages['f_emma'].length === 0) {
+    db.messages['f_emma'] = [
+      { id:1, from:'f_emma', text:'Ei! Estás a gostar do novo design system? 🎨', time:'14:00', reactions:[] },
+      { id:2, from:'you',    text:'Adoro! As animações ficaram incríveis.', time:'14:02', reactions:[{e:'❤️',n:1,mine:false}] },
+    ];
+  }
+  saveDB(db);
+}
+seedMessages();
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+function navTo(mode) {
+  STATE.nav = mode;
+  document.getElementById('sidebar-home').style.display    = mode === 'home'    ? 'flex' : 'none';
+  document.getElementById('sidebar-friends').style.display = mode === 'friends' ? 'flex' : 'none';
+  if (mode === 'home') {
+    document.getElementById('sidebar-home').style.flexDirection = 'column';
+    document.getElementById('sidebar-home').style.flex = '1';
+    document.getElementById('sidebar-home').style.overflow = 'hidden';
+  }
+  if (mode === 'friends') {
+    document.getElementById('sidebar-friends').style.flexDirection = 'column';
+    document.getElementById('sidebar-friends').style.flex = '1';
+    document.getElementById('sidebar-friends').style.overflow = 'hidden';
+    renderFriendsSidebar();
+  }
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + mode)?.classList.add('active');
+
+  if (mode === 'home') {
+    renderDMList();
+    showView(STATE.activeDM ? 'chat' : 'empty');
+  } else if (mode === 'friends') {
+    showView('friends');
+    renderFriendsMain();
+    updateFriendsLoginGate();
+  } else if (mode === 'notifications') {
+    showView('notifications');
+    renderNotifications();
+    // Clear badge
+    STATE.notifications.forEach(n => n.read = true);
+    updateNotifBadge();
+  }
+  updateRightSidebar();
+}
+
+function showView(v) {
+  if (STATE.inCall && v !== 'call') return;
+  STATE.view = v;
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('view-' + v);
+  if (el) el.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════
+   DM LIST
+═══════════════════════════════════════════ */
+function renderDMList(filter='') {
+  const list = document.getElementById('dm-list');
+  const friends = db.friends.filter(f =>
+    !db.blocked.find(b => b.id === f.id) &&
+    f.name.toLowerCase().includes(filter.toLowerCase())
+  );
+  list.innerHTML = `<div class="side-cat">MENSAGENS DIRETAS</div>` +
+    (friends.length === 0 ? `<p style="padding:12px 16px;font-size:12px;color:var(--muted);">Nenhum amigo ainda. Adiciona alguém!</p>` : '') +
+    friends.map(f => {
+      const msgs = db.messages[f.id] || [];
+      const last = msgs[msgs.length - 1];
+      const unread = msgs.filter(m => m.from !== 'you' && !m.read).length;
+      const isActive = STATE.activeDM === f.id;
+      return `
+        <div class="dm-item ${isActive?'active':''}" onclick="openDM('${f.id}')" id="dm-${f.id}">
+          <div class="dm-av" style="background:linear-gradient(135deg,${f.color}aa,${f.color}55);">
+            ${f.initials}
+            <span class="status ${f.status}"></span>
+          </div>
+          <div class="dm-info">
+            <span class="dm-name">${f.name}</span>
+            <span class="dm-preview">${last ? escHtml(last.text).substring(0,28)+'...' : 'Nenhuma mensagem ainda'}</span>
+          </div>
+          ${unread > 0 ? `<span class="dm-badge">${unread}</span>` : ''}
+          <div class="dm-actions">
+            <button class="dm-act-btn" onclick="event.stopPropagation();startCallFor('${f.id}')" title="Chamada">📹</button>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function filterDMs(val) { renderDMList(val); }
+
+function openDM(friendId) {
+  STATE.activeDM = friendId;
+  navTo('home');
+  const f = db.friends.find(x => x.id === friendId);
+  if (!f) return;
+  // Update header
+  document.getElementById('chat-icon').textContent = '💬';
+  document.getElementById('chat-title').textContent = f.name;
+  document.getElementById('chat-topic').innerHTML =
+    `<span class="chip ${f.status}">${f.status === 'online' ? '● Online' : f.status === 'idle' ? '● Inativo' : '● Offline'}</span>`;
+  document.getElementById('msg-input').placeholder = `Mensagem para ${f.name}...`;
+  // Mark messages read
+  if (db.messages[friendId]) db.messages[friendId].forEach(m => m.read = true);
+  saveDB(db);
+  showView('chat');
+  renderMessages(friendId);
+  renderDMList();
+  updateRightSidebar();
+  // Simulate typing occasionally
+  scheduleTyping(f);
+}
+
+/* ═══════════════════════════════════════════
+   MESSAGES
+═══════════════════════════════════════════ */
+function renderMessages(friendId) {
+  const wrap = document.getElementById('messages-wrap');
+  const msgs = db.messages[friendId] || [];
+  const f = db.friends.find(x => x.id === friendId);
+  if (!f) return;
+
+  if (msgs.length === 0) {
+    wrap.innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:.5;">
+        <div style="font-size:48px;">👋</div>
+        <p style="font-size:14px;color:var(--muted);text-align:center;">Este é o início da tua conversa com <strong style="color:var(--text);">${f.name}</strong>.<br>Diz olá!</p>
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = msgs.map((m,i) => {
+    const isMe = m.from === 'you';
+    const friend = isMe ? {name:'Você', initials:'YO', color:'#89b4fa'} : f;
+    const showHeader = i === 0 || msgs[i-1].from !== m.from;
+    return `
+      <div class="msg-group" id="msg-${m.id}">
+        ${showHeader ? `<div class="msg-av" style="background:linear-gradient(135deg,${friend.color}aa,${friend.color}44);">${friend.initials}</div>` : '<div style="width:38px;flex-shrink:0;"></div>'}
+        <div class="msg-body">
+          ${showHeader ? `<div class="msg-meta"><span class="msg-author" style="color:${friend.color};">${friend.name}</span><span class="msg-time">${m.time}</span></div>` : ''}
+          <div class="msg-text">${escHtml(m.text)}</div>
+          ${m.reactions && m.reactions.length > 0 ? `
+            <div class="msg-reactions">${m.reactions.map(r => `
+              <button class="reaction-pill ${r.mine?'mine':''}" onclick="toggleReaction('${friendId}',${m.id},'${r.e}')">
+                ${r.e} ${r.n}
+              </button>`).join('')}
+            </div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || !STATE.activeDM) return;
+  if (!db.messages[STATE.activeDM]) db.messages[STATE.activeDM] = [];
+  const id = Date.now();
+  const now = new Date();
+  db.messages[STATE.activeDM].push({
+    id, from:'you',
+    text, read:true,
+    time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
+    reactions: []
+  });
+  input.value = '';
+  saveDB(db);
+  renderMessages(STATE.activeDM);
+  renderDMList();
+  // Simulate a reply after delay
+  scheduleReply(STATE.activeDM);
+}
+
+function handleMsgKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+const REPLY_TEMPLATES = [
+  'Boa ideia! 👍', 'Concordo completamente!', 'Entendido, obrigado!', '😄 Perfeito!',
+  'Vou verificar isso agora.', 'Que fixe! 🚀', 'Ok, dá-me um segundo.', 'Sim, exato!',
+  'Interessante perspetiva!', '💯 Totalmente de acordo.', 'Vou fazer isso já!',
+];
+
+function scheduleReply(friendId) {
+  const f = db.friends.find(x => x.id === friendId);
+  if (!f || f.status === 'offline') return;
+  const delay = 1500 + Math.random() * 3000;
+  setTimeout(() => {
+    if (STATE.activeDM !== friendId) return;
+    showTyping(f.name);
+    setTimeout(() => {
+      hideTyping();
+      const text = REPLY_TEMPLATES[Math.floor(Math.random() * REPLY_TEMPLATES.length)];
+      if (!db.messages[friendId]) db.messages[friendId] = [];
+      const now = new Date();
+      db.messages[friendId].push({
+        id: Date.now(), from: friendId,
+        text, read: true,
+        time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
+        reactions: []
+      });
+      saveDB(db);
+      renderMessages(friendId);
+      renderDMList();
+      // Notify if user is not looking at this conversation
+      if (STATE.activeDM !== friendId || STATE.view !== 'chat') {
+        const fr = db.friends.find(x => x.id === friendId);
+        if (fr) addNotification({ type:'msg', title:`Nova mensagem de ${fr.name}`, desc: text.substring(0,60), time:'agora', color: fr.color, action:'open', friendId });
+      }
+    }, 1200 + Math.random() * 1500);
+  }, delay);
+}
+
+function scheduleTyping(f) {
+  if (f.status === 'offline') return;
+  clearTimeout(STATE.typingTimeout);
+  STATE.typingTimeout = setTimeout(() => {
+    if (STATE.activeDM !== f.id) return;
+    showTyping(f.name);
+    setTimeout(hideTyping, 2000 + Math.random() * 1500);
+  }, 4000 + Math.random() * 8000);
+}
+
+function showTyping(name) {
+  const row = document.getElementById('typing-row');
+  document.getElementById('typing-text').textContent = `${name} está a escrever...`;
+  row.style.visibility = 'visible';
+}
+function hideTyping() {
+  document.getElementById('typing-row').style.visibility = 'hidden';
+}
+
+function toggleReaction(friendId, msgId, emoji) {
+  const msgs = db.messages[friendId] || [];
+  const msg = msgs.find(m => m.id === msgId);
+  if (!msg || !msg.reactions) return;
+  const r = msg.reactions.find(x => x.e === emoji);
+  if (r) { r.mine = !r.mine; r.n += r.mine ? 1 : -1; if (r.n <= 0) msg.reactions = msg.reactions.filter(x => x !== r); }
+  else msg.reactions.push({e:emoji, n:1, mine:true});
+  saveDB(db);
+  renderMessages(friendId);
+}
+
+function insertEmoji() {
+  const emojis = ['😄','🔥','👍','🚀','❤️','💪','🎉','😂','✨','🙌'];
+  const input = document.getElementById('msg-input');
+  input.value += emojis[Math.floor(Math.random() * emojis.length)];
+  input.focus();
+}
+
+/* ═══════════════════════════════════════════
+   FRIENDS
+═══════════════════════════════════════════ */
+function setFriendTab(tab, btn) {
+  STATE.friendTab = tab;
+  document.querySelectorAll('.friends-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFriendsSidebar();
+}
+
+function renderFriendsSidebar() {
+  const list = document.getElementById('friends-sidebar-list');
+  const tab = STATE.friendTab;
+  let friends = db.friends.filter(f => !db.blocked.find(b=>b.id===f.id));
+  if (tab === 'online')  friends = friends.filter(f => f.status !== 'offline');
+  if (tab === 'pending') friends = db.pending;
+  if (tab === 'blocked') friends = db.blocked;
+
+  if (tab === 'pending') {
+    list.innerHTML = db.pending.length === 0 ?
+      `<p style="padding:16px;font-size:12px;color:var(--muted);">Nenhum pedido pendente.</p>` :
+      db.pending.map(p => `
+        <div class="dm-item" style="margin:4px 0;">
+          <div class="dm-av" style="background:linear-gradient(135deg,${p.color||'#89b4fa'}88,${p.color||'#89b4fa'}44);">${p.initials||p.name[0]}</div>
+          <div class="dm-info">
+            <span class="dm-name">${p.name}</span>
+            <span class="dm-preview pending-badge">A aguardar...</span>
+          </div>
+        </div>`).join('');
+    return;
+  }
+
+  list.innerHTML = friends.length === 0 ?
+    `<p style="padding:16px;font-size:12px;color:var(--muted);">Nenhum amigo aqui.</p>` :
+    friends.map(f => `
+      <div class="dm-item" onclick="openDM('${f.id}')">
+        <div class="dm-av" style="background:linear-gradient(135deg,${f.color}88,${f.color}44);">
+          ${f.initials}
+          <span class="status ${f.status}"></span>
+        </div>
+        <div class="dm-info">
+          <span class="dm-name">${f.name}</span>
+          <span class="dm-preview">${f.status === 'online' ? '● Online' : f.status === 'idle' ? '● Inativo' : '● Offline'}</span>
+        </div>
+        <div class="dm-actions">
+          <button class="dm-act-btn" onclick="event.stopPropagation();startCallFor('${f.id}')" title="Chamar">📹</button>
+        </div>
+      </div>`).join('');
+}
+
+function renderFriendsMain() {
+  const list = document.getElementById('friends-main-list');
+  const online  = db.friends.filter(f => f.status !== 'offline' && !db.blocked.find(b=>b.id===f.id));
+  const offline = db.friends.filter(f => f.status === 'offline'  && !db.blocked.find(b=>b.id===f.id));
+
+  const renderFriend = (f) => `
+    <div class="friend-item" id="fi-${f.id}">
+      <div class="friend-av" style="background:linear-gradient(135deg,${f.color}99,${f.color}44);">
+        ${f.initials}
+        <span class="status ${f.status}"></span>
+      </div>
+      <div class="friend-info">
+        <div class="friend-name">${f.name}</div>
+        <div class="friend-status">${f.status === 'online' ? '● Online' : f.status === 'idle' ? `● ${f.game || 'Inativo'}` : '● Offline'}</div>
+      </div>
+      <div class="friend-actions">
+        <button class="friend-btn" onclick="openDM('${f.id}')" title="Mensagem">💬</button>
+        ${f.status !== 'offline' ? `<button class="friend-btn call" onclick="startCallFor('${f.id}')" title="Chamar">📹</button>` : ''}
+        <button class="friend-btn remove" onclick="removeFriend('${f.id}')" title="Remover">✕</button>
+      </div>
+    </div>`;
+
+  list.innerHTML =
+    `<div class="friends-section-title">ONLINE — ${online.length}</div>` +
+    (online.length ? online.map(renderFriend).join('') : `<p class="empty-friends"><p>Nenhum amigo online.</p></p>`) +
+    `<div class="friends-section-title" style="margin-top:16px;">OFFLINE — ${offline.length}</div>` +
+    (offline.length ? offline.map(renderFriend).join('') : `<p style="font-size:13px;color:var(--muted);margin:8px 0;">Nenhum amigo offline.</p>`);
+}
+
+function addFriend() {
+  if (!STATE.loggedIn) { showLoginModal(); return; }
+  const input = document.getElementById('friend-input');
+  const name = input.value.trim();
+  const feedback = document.getElementById('friend-input-feedback');
+  if (!name) { feedback.style.color='var(--red)'; feedback.textContent='Por favor introduz um nome de utilizador.'; return; }
+  if (name.length < 2) { feedback.style.color='var(--red)'; feedback.textContent='Nome demasiado curto.'; return; }
+  if (STATE.user && name.toLowerCase() === STATE.user.name.toLowerCase()) {
+    feedback.style.color='var(--red)'; feedback.textContent='Não podes adicionar-te a ti mesmo!'; return;
+  }
+  if (db.friends.find(f => f.name.toLowerCase() === name.toLowerCase())) {
+    feedback.style.color='var(--amber)'; feedback.textContent='Este utilizador já é teu amigo!'; return;
+  }
+  const colors = ['#89b4fa','#a78bfa','#f472b6','#4ade80','#fbbf24','#f87171','#22d3ee'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const pending = { id:'f_'+Date.now(), name, initials, color, status:'online', game:'' };
+  db.pending.push(pending);
+  saveDB(db);
+  input.value = '';
+  feedback.style.color = 'var(--blue)';
+  feedback.textContent = `✓ Pedido enviado para ${name}!`;
+  renderFriendsSidebar();
+  showToast(`Pedido de amizade enviado para ${name}!`);
+  addNotification({ type:'friend', title:`Pedido enviado a ${name}`, desc:`A aguardar que ${name} aceite...`, time:'agora', color });
+
+  // Simulate acceptance
+  setTimeout(() => {
+    const idx = db.pending.findIndex(p => p.id === pending.id);
+    if (idx !== -1) {
+      db.pending.splice(idx, 1);
+      db.friends.push(pending);
+      saveDB(db);
+      renderFriendsMain();
+      renderFriendsSidebar();
+      renderDMList();
+      updateRightSidebar();
+      showToast(`${name} aceitou o teu pedido! 🎉`, 'success');
+      feedback.textContent = '';
+      addNotification({ type:'friend', title:`${name} aceitou!`, desc:`Já são amigos. Começa a conversa!`, time:'agora', color, action:'open', friendId: pending.id });
+    }
+  }, 2800);
+}
+
+function removeFriend(id) {
+  if (!confirm('Tens a certeza que queres remover este amigo?')) return;
+  db.friends = db.friends.filter(f => f.id !== id);
+  if (STATE.activeDM === id) { STATE.activeDM = null; showView('empty'); }
+  saveDB(db);
+  renderFriendsMain();
+  renderDMList();
+  updateRightSidebar();
+  showToast('Amigo removido.');
+}
+
+/* ═══════════════════════════════════════════
+   CALLS
+═══════════════════════════════════════════ */
+function startCall() {
+  if (!STATE.activeDM) return;
+  startCallFor(STATE.activeDM);
+}
+
+function startCallFor(friendId) {
+  const f = db.friends.find(x => x.id === friendId);
+  if (!f) return;
+  if (f.status === 'offline') { showToast(`${f.name} está offline.`, 'error'); return; }
+  STATE.inCall = true;
+  STATE.callFriend = f;
+  STATE.mic = true; STATE.camera = true; STATE.screen = false; STATE.hand = false;
+  document.getElementById('call-name').textContent = `📹 ${f.name}`;
+  renderCallParticipants([f]);
+  showView('call');
+  startCallTimer();
+  navTo('home');
+  showToast(`A chamar ${f.name}...`);
+  // Simulate them answering
+  setTimeout(() => { showToast(`${f.name} atendeu a chamada! 🎉`); startSpeaking([f]); }, 1800);
+}
+
+function renderCallParticipants(friends) {
+  const area = document.getElementById('participants-area');
+  const n = friends.length;
+  area.className = 'participants-area grid-' + Math.min(n, 4);
+  area.innerHTML = friends.map(f => `
+    <div class="participant-tile" id="tile-${f.id}" style="background:linear-gradient(160deg,${f.color}18,${f.color}06,var(--bg));">
+      <div class="tile-bg" style="position:absolute;inset:0;background:radial-gradient(ellipse at 40% 30%,${f.color}12 0%,transparent 65%);"></div>
+      <div class="tile-avatar-large" style="background:linear-gradient(135deg,${f.color}99,${f.color}44);">${f.initials}</div>
+      <div class="tile-name-bar">
+        <span class="tile-name">${f.name}</span>
+        <span class="tile-mic-icon">🎤</span>
+      </div>
+    </div>`).join('');
+  // Also update screen side videos
+  const sideVideos = document.getElementById('screen-side-videos');
+  sideVideos.innerHTML = friends.map(f => `
+    <div class="screen-side-tile" id="side-${f.id}" style="background:linear-gradient(160deg,${f.color}18,var(--bg));">
+      <div style="font-size:22px;font-weight:700;color:${f.color};">${f.initials}</div>
+      <div class="tile-name-bar"><span class="tile-name">${f.name}</span></div>
+    </div>`).join('');
+}
+
+function startSpeaking(friends) {
+  clearInterval(STATE.speakInterval);
+  STATE.speakInterval = setInterval(() => {
+    document.querySelectorAll('.participant-tile, .screen-side-tile').forEach(t => t.classList.remove('speaking'));
+    if (Math.random() > 0.3) {
+      const tiles = document.querySelectorAll('.participant-tile');
+      if (tiles.length > 0) {
+        const t = tiles[Math.floor(Math.random() * tiles.length)];
+        t.classList.add('speaking');
+        setTimeout(() => t.classList.remove('speaking'), 2200);
+      }
+    }
+  }, 2800);
+}
+
+function endCall() {
+  STATE.inCall = false; STATE.callFriend = null;
+  STATE.screen = false; STATE.hand = false;
+  clearInterval(STATE.callInterval); clearInterval(STATE.speakInterval);
+  document.getElementById('screen-share-layout').classList.remove('active');
+  document.getElementById('ctrl-screen').classList.remove('active');
+  document.getElementById('ctrl-hand').classList.remove('active');
+  document.getElementById('call-timer').textContent = '00:00';
+  STATE.callSeconds = 0;
+  // Return to chat or empty
+  if (STATE.activeDM) showView('chat');
+  else showView('empty');
+  showToast('Chamada terminada.');
+}
+
+function startCallTimer() {
+  STATE.callSeconds = 0;
+  clearInterval(STATE.callInterval);
+  STATE.callInterval = setInterval(() => {
+    STATE.callSeconds++;
+    const m = Math.floor(STATE.callSeconds/60).toString().padStart(2,'0');
+    const s = (STATE.callSeconds%60).toString().padStart(2,'0');
+    document.getElementById('call-timer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+const SVG_MIC_ON  = `<svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
+const SVG_MIC_OFF = `<svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
+const SVG_CAM_ON  = `<svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
+const SVG_CAM_OFF = `<svg class="ctrl-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h3a2 2 0 0 1 2 2v9.34m-7.72-2.06A4 4 0 0 1 8.16 8.16"/></svg>`;
+
+function toggleCallMic() {
+  STATE.mic = !STATE.mic;
+  const btn = document.getElementById('ctrl-mic');
+  btn.className = `ctrl-pill ${STATE.mic?'':'muted-state'}`;
+  btn.innerHTML = `${STATE.mic ? SVG_MIC_ON : SVG_MIC_OFF} ${STATE.mic?'Silenciar':'Ativado'}`;
+  showToast(STATE.mic ? 'Microfone ativo.' : 'Microfone silenciado.');
+}
+
+function toggleCallCam() {
+  STATE.camera = !STATE.camera;
+  const btn = document.getElementById('ctrl-cam');
+  const pip = document.getElementById('pip-you');
+  btn.className = `ctrl-pill ${STATE.camera?'':'muted-state'}`;
+  btn.innerHTML = `${STATE.camera ? SVG_CAM_ON : SVG_CAM_OFF} ${STATE.camera?'Câmara':'Sem vídeo'}`;
+  pip.classList.toggle('cam-off', !STATE.camera);
+  document.getElementById('pip-avatar').textContent = STATE.camera ? 'YO' : '🚫';
+  showToast(STATE.camera ? 'Câmara ligada.' : 'Câmara desligada.');
+}
+
+function toggleScreen() {
+  STATE.screen = !STATE.screen;
+  const layout = document.getElementById('screen-share-layout');
+  const btn = document.getElementById('ctrl-screen');
+  layout.classList.toggle('active', STATE.screen);
+  btn.classList.toggle('active', STATE.screen);
+  btn.innerHTML = `<span class="ctrl-icon">🖥️</span> ${STATE.screen?'Parar partilha':'Partilhar'}`;
+  showToast(STATE.screen ? 'A partilhar o ecrã! 🖥️' : 'Partilha de ecrã parada.');
+}
+
+function raiseHand() {
+  STATE.hand = !STATE.hand;
+  const btn = document.getElementById('ctrl-hand');
+  btn.classList.toggle('active', STATE.hand);
+  btn.innerHTML = `<span class="ctrl-icon">${STATE.hand?'✋':'🤚'}</span> ${STATE.hand?'Baixar mão':'Levantar mão'}`;
+  if (STATE.hand) showToast('Mão levantada! ✋');
+}
+
+function openCallChat() {
+  endCall();
+  if (STATE.callFriend) openDM(STATE.callFriend.id);
+}
+
+/* Incoming call simulation */
+function simulateIncomingCall() {
+  const onlineFriends = db.friends.filter(f => f.status !== 'offline');
+  if (onlineFriends.length === 0 || STATE.inCall) return;
+  const f = onlineFriends[Math.floor(Math.random() * onlineFriends.length)];
+  STATE.incomingFriend = f;
+  const overlay = document.getElementById('incoming-call');
+  const av = document.getElementById('ic-av');
+  av.style.background = `linear-gradient(135deg,${f.color}88,${f.color}44)`;
+  av.textContent = f.initials;
+  document.getElementById('ic-name').textContent = f.name;
+  overlay.classList.add('show');
+  setTimeout(() => { if (overlay.classList.contains('show')) declineCall(); }, 18000);
+}
+
+function acceptIncomingCall() {
+  document.getElementById('incoming-call').classList.remove('show');
+  if (STATE.incomingFriend) startCallFor(STATE.incomingFriend.id);
+}
+function declineCall() {
+  const f = STATE.incomingFriend;
+  document.getElementById('incoming-call').classList.remove('show');
+  if (f) addNotification({ type:'call', title:`Chamada perdida de ${f.name}`, desc:'Clica para retornar a chamada.', time:'agora', color: f.color, action:'open', friendId: f.id });
+  STATE.incomingFriend = null;
+  showToast('Chamada recusada.');
+}
+
+/* ═══════════════════════════════════════════
+   RIGHT SIDEBAR
+═══════════════════════════════════════════ */
+function updateRightSidebar() {
+  const right = document.getElementById('right-list');
+  const header = document.getElementById('right-header');
+  if (STATE.nav === 'friends') {
+    header.textContent = 'TODOS OS AMIGOS';
+    right.innerHTML = db.friends.map(f => `
+      <div class="member-item ${f.status==='offline'?'member-offline':''}">
+        <div class="member-av" style="background:linear-gradient(135deg,${f.color}88,${f.color}44);">
+          ${f.initials}
+          <span class="status ${f.status}"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">${f.name}</div>
+          <div class="member-role">${f.status==='online'?'Online':f.status==='idle'?'Inativo':'Offline'}</div>
+        </div>
+      </div>`).join('');
+    return;
+  }
+
+  const online  = db.friends.filter(f => f.status !== 'offline');
+  const offline = db.friends.filter(f => f.status === 'offline');
+  header.textContent = `MEMBROS — ${db.friends.length}`;
+  right.innerHTML =
+    `<div class="side-cat">ONLINE — ${online.length}</div>` +
+    online.map(f => `
+      <div class="member-item" onclick="openDM('${f.id}')">
+        <div class="member-av" style="background:linear-gradient(135deg,${f.color}88,${f.color}44);">
+          ${f.initials}
+          <span class="status ${f.status}"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">${f.name}</div>
+          <div class="member-role ${f.game?'mod':''}">${f.game||'Online'}</div>
+        </div>
+      </div>`).join('') +
+    (offline.length ? `<div class="side-cat" style="margin-top:8px;">OFFLINE — ${offline.length}</div>` +
+      offline.map(f => `
+        <div class="member-item member-offline">
+          <div class="member-av" style="background:linear-gradient(135deg,${f.color}44,${f.color}22);">
+            ${f.initials}
+            <span class="status offline"></span>
+          </div>
+          <div class="member-info">
+            <div class="member-name">${f.name}</div>
+            <div class="member-role">Offline</div>
+          </div>
+        </div>`).join('') : '');
+}
+
+function toggleMembers() {
+  STATE.membersVisible = !STATE.membersVisible;
+  const app = document.getElementById('app');
+  app.classList.toggle('hide-right', !STATE.membersVisible);
+}
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+function toggleUBMic() {
+  STATE.ubMic = !STATE.ubMic;
+  const btn = document.getElementById('ub-mic');
+  btn.textContent = STATE.ubMic ? '🎤' : '🔇';
+  btn.classList.toggle('muted', !STATE.ubMic);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _toastTimer;
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  clearTimeout(_toastTimer);
+  setTimeout(() => t.classList.add('show'), 10);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════
+   AUTH  —  Google Identity Services real
+   ➜ Para ativar: substitui YOUR_CLIENT_ID pelo
+     Client ID do teu projeto no Google Cloud.
+     Regista a origem autorizada:
+     https://lista-cursos-br.vercel.app
+═══════════════════════════════════════════ */
+const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID';
+
+let _googlePayload = null; // dados vindos do JWT do Google
+
+/* ---------- utils ---------- */
+function parseJwt(token) {
+  try {
+    const b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(atob(b64).split('').map(function(c){
+      return '%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2);
+    }).join('')));
+  } catch(e) { return null; }
+}
+
+function avatarColor(email) {
+  var colors = ['#89b4fa','#a78bfa','#f472b6','#4ade80','#fbbf24','#f87171','#22d3ee'];
+  var i = 0;
+  for (var j=0; j<email.length; j++) i += email.charCodeAt(j);
+  return colors[i % colors.length];
+}
+
+/* ---------- Google SDK init ---------- */
+function initGoogleAuth() {
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_CLIENT_ID') {
+    // Sem Client ID: mostra aviso e botão fallback
+    var warn = document.getElementById('login-config-warning');
+    var fb   = document.getElementById('google-fallback-btn');
+    if (warn) warn.style.display = 'block';
+    if (fb)   fb.style.display   = 'flex';
+    return;
+  }
+  if (typeof google === 'undefined') {
+    // SDK ainda não carregou, tenta de novo em 500ms
+    setTimeout(initGoogleAuth, 500);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+  // Renderiza o botão oficial dentro do contentor
+  google.accounts.id.renderButton(
+    document.getElementById('google-btn-container'),
+    { theme:'filled_black', size:'large', shape:'rectangular',
+      text:'signin_with', logo_alignment:'left', width:320 }
+  );
+}
+
+/* Chamado pelo SDK quando o utilizador escolhe a conta Google */
+function handleCredentialResponse(response) {
+  var payload = parseJwt(response.credential);
+  if (!payload) { showToast('Erro ao ler dados do Google.', 'error'); return; }
+  _googlePayload = payload;
+  showStep2(payload.name || payload.email, payload.email, payload.picture || null);
+}
+
+/* Fallback: sem Client ID → pede nome manualmente */
+function handleGoogleLogin() {
+  showStep2('', '', null);
+}
+
+/* ---------- Step 2: confirmar nome ---------- */
+function showStep2(name, email, picture) {
+  var s1 = document.getElementById('login-step-1');
+  var s2 = document.getElementById('login-step-2');
+  var av = document.getElementById('gp-avatar');
+  var nm = document.getElementById('gp-name');
+  var em = document.getElementById('gp-email');
+  var ui = document.getElementById('username-input');
+  if (!s1||!s2||!av||!ui) return;
+
+  var color = avatarColor(email || name || 'nexus');
+  var initials = (name||email||'?').replace(/\s+/g,' ').trim().split(' ')
+    .map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase() || '?';
+
+  // Avatar: foto do Google ou iniciais
+  if (picture) {
+    av.innerHTML = '<img src="'+picture+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.parentNode.textContent=\''+initials+'\'">';
+    av.style.background = color;
+  } else {
+    av.textContent = initials;
+    av.style.background = 'linear-gradient(135deg,'+color+'cc,'+color+'66)';
+  }
+
+  if (nm) nm.textContent = name || 'Conta Google';
+  if (em) em.textContent = email || '';
+
+  // Pré-preenche com o nome real do Google
+  ui.value = name || '';
+  s1.style.display = 'none';
+  s2.style.display = 'block';
+  validateUsername();
+  ui.focus();
+  ui.select();
+}
+
+function validateUsername() {
+  var ui   = document.getElementById('username-input');
+  var hint = document.getElementById('username-hint');
+  if (!ui||!hint) return false;
+  var val = ui.value.trim();
+  if (val.length < 2) { hint.style.color='var(--red)'; hint.textContent='Mínimo 2 caracteres.'; return false; }
+  if (val.length > 32){ hint.style.color='var(--red)'; hint.textContent='Máximo 32 caracteres.'; return false; }
+  hint.style.color='var(--green)'; hint.textContent='✓ "'+val+'" – parece bem!';
+  return true;
+}
+
+function completeLogin() {
+  if (!validateUsername()) return;
+  var ui = document.getElementById('username-input');
+  if (!ui) return;
+  var displayName = ui.value.trim();
+  var email   = _googlePayload ? _googlePayload.email   : '';
+  var picture = _googlePayload ? _googlePayload.picture : null;
+  var color   = avatarColor(email || displayName);
+  var initials= displayName.replace(/\s+/g,' ').trim().split(' ')
+    .map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase();
+  var token = Math.random().toString(36).substring(2,10);
+
+  STATE.loggedIn = true;
+  STATE.user = {
+    name: displayName, email: email, picture: picture,
+    initials: initials, color: color, inviteToken: token,
+    googleName: _googlePayload ? (_googlePayload.name||'') : ''
+  };
+  db.me = STATE.user;
+  saveDB(db);
+  hideLoginModal();
+  updateUserBar();
+  updateFriendsLoginGate();
+  addNotification({ type:'msg', title:'Bem-vindo ao Nexus!',
+    desc:'Olá '+displayName+'! Partilha o teu link para adicionar amigos.',
+    time:'agora', color:color });
+  showToast('Bem-vindo, '+displayName+'! 🎉', 'success');
+}
+
+/* ---------- modal helpers ---------- */
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-login')) hideLoginModal();
+}
+function showLoginModal() {
+  var overlay = document.getElementById('modal-login');
+  var s1 = document.getElementById('login-step-1');
+  var s2 = document.getElementById('login-step-2');
+  if (!overlay||!s1||!s2) return;
+  s1.style.display = 'block';
+  s2.style.display = 'none';
+  overlay.classList.remove('hidden');
+}
+function hideLoginModal() {
+  var el = document.getElementById('modal-login');
+  if (el) el.classList.add('hidden');
+}
+
+/* ═══════════════════════════════════════════
+   PERFIL  —  editar nome depois do login
+═══════════════════════════════════════════ */
+function openProfileModal() {
+  if (!STATE.loggedIn) { showLoginModal(); return; }
+  var u = STATE.user;
+  var av = document.getElementById('profile-avatar-preview');
+  if (av) {
+    if (u.picture) {
+      av.innerHTML = '<img src="'+u.picture+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+      av.style.background = u.color;
+    } else {
+      av.textContent = u.initials;
+      av.style.background = 'linear-gradient(135deg,'+u.color+'cc,'+u.color+'55)';
+    }
+  }
+  var gn = document.getElementById('profile-google-name');
+  var ge = document.getElementById('profile-google-email');
+  if (gn) gn.textContent = u.googleName || u.name;
+  if (ge) ge.textContent = u.email || 'Sem email vinculado';
+  var ni = document.getElementById('profile-name-input');
+  if (ni) { ni.value = u.name; validateProfileName(); }
+  var pm = document.getElementById('modal-profile');
+  if (pm) pm.classList.remove('hidden');
+}
+
+function closeProfileModal() {
+  var pm = document.getElementById('modal-profile');
+  if (pm) pm.classList.add('hidden');
+}
+
+function handleProfileOverlayClick(e) {
+  if (e.target === document.getElementById('modal-profile')) closeProfileModal();
+}
+
+function validateProfileName() {
+  var ni   = document.getElementById('profile-name-input');
+  var hint = document.getElementById('profile-name-hint');
+  if (!ni||!hint) return false;
+  var val = ni.value.trim();
+  if (val.length < 2) { hint.style.color='var(--red)'; hint.textContent='Mínimo 2 caracteres.'; return false; }
+  hint.style.color='var(--muted)'; hint.textContent='Este é o nome que aparece nas conversas.';
+  return true;
+}
+
+function saveProfileName() {
+  if (!validateProfileName()) return;
+  var ni = document.getElementById('profile-name-input');
+  if (!ni) return;
+  var newName = ni.value.trim();
+  var initials = newName.replace(/\s+/g,' ').trim().split(' ')
+    .map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase();
+  STATE.user.name     = newName;
+  STATE.user.initials = initials;
+  db.me = STATE.user;
+  saveDB(db);
+  updateUserBar();
+  renderDMList();
+  closeProfileModal();
+  showToast('Nome atualizado para "'+newName+'"!', 'success');
+}
+
+function logoutUser() {
+  if (!confirm('Tens a certeza que queres terminar sessão?')) return;
+  STATE.loggedIn = false;
+  STATE.user     = null;
+  _googlePayload = null;
+  delete db.me;
+  saveDB(db);
+  closeProfileModal();
+  // Reset user bar
+  var av = document.getElementById('user-av-initials');
+  if (av) { av.textContent='?'; av.style.background=''; }
+  var un = document.getElementById('user-display-name');
+  if (un) un.textContent = 'Visitante';
+  var ut = document.getElementById('user-display-tag');
+  if (ut) ut.textContent = 'Clica para entrar';
+  updateFriendsLoginGate();
+  showLoginModal();
+  showToast('Sessão terminada.', 'success');
+}
+
+function updateUserBar() {
+  if (!STATE.loggedIn||!STATE.user) return;
+  var u  = STATE.user;
+  var av = document.getElementById('user-av-initials');
+  if (!av) return;
+  if (u.picture) {
+    av.innerHTML = '<img src="'+u.picture+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+    av.style.background = u.color;
+  } else {
+    av.textContent = u.initials;
+    av.style.background = 'linear-gradient(135deg,'+u.color+'cc,'+u.color+'55)';
+  }
+  var un = document.getElementById('user-display-name');
+  if (un) un.textContent = u.name;
+  var ut = document.getElementById('user-display-tag');
+  if (ut) ut.textContent = u.email ? '● Online' : '● Online';
+}
+
+
+function updateFriendsLoginGate() {
+  const gate = document.getElementById('friend-login-gate');
+  const section = document.getElementById('friend-add-section');
+  if (!gate || !section) return;
+  if (STATE.loggedIn) {
+    gate.style.display = 'none';
+    section.style.display = 'block';
+    // Set invite link
+    const link = `nexus.gg/invite/${STATE.user.inviteToken}`;
+    document.getElementById('invite-link-text').textContent = link;
+  } else {
+    gate.style.display = 'block';
+    section.style.display = 'none';
+  }
+}
+
+function copyInviteLink() {
+  const link = `https://nexus.gg/invite/${STATE.user.inviteToken}`;
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('Link copiado! Partilha com os teus amigos. 🔗', 'success');
+  }).catch(() => {
+    showToast('Link: ' + link);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════ */
+function addNotification(n) {
+  n.id = Date.now() + Math.random();
+  n.read = false;
+  STATE.notifications.unshift(n);
+  updateNotifBadge();
+  // If on notifications view, re-render
+  if (STATE.view === 'notifications') renderNotifications();
+}
+
+function updateNotifBadge() {
+  const unread = STATE.notifications.filter(n => !n.read).length;
+  const badge = document.getElementById('notif-badge');
+  if (unread > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = unread > 9 ? '9+' : unread;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderNotifications() {
+  const list = document.getElementById('notifications-list');
+  if (STATE.notifications.length === 0) {
+    list.innerHTML = `<div class="notif-empty"><span class="notif-empty-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </span><p style="font-size:14px;">Nenhuma notificação por agora.</p></div>`;
+    return;
+  }
+
+  const friends  = STATE.notifications.filter(n => n.type === 'friend');
+  const messages = STATE.notifications.filter(n => n.type === 'msg');
+  const calls    = STATE.notifications.filter(n => n.type === 'call');
+
+  const renderCard = (n) => {
+    const iconBg = n.type === 'friend' ? 'var(--purple)' : n.type === 'call' ? 'var(--red)' : (n.color || 'var(--blue)');
+    const iconSvg = n.type === 'friend'
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>`
+      : n.type === 'call'
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l.91-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`;
+
+    const actionsHtml = n.action === 'open' && n.friendId
+      ? `<div class="notif-actions"><button class="notif-btn goto" onclick="openDM('${n.friendId}');navTo('home');">Abrir conversa</button></div>`
+      : n.action === 'accept' && n.friendId
+      ? `<div class="notif-actions"><button class="notif-btn accept" onclick="acceptFriendNotif('${n.friendId}','${n.id}')">Aceitar</button><button class="notif-btn decline" onclick="removeNotif('${n.id}')">Recusar</button></div>`
+      : '';
+
+    return `<div class="notif-card type-${n.type}" id="notif-${n.id}">
+      <div class="notif-icon-wrap" style="background:linear-gradient(135deg,${iconBg}cc,${iconBg}66);">${iconSvg}</div>
+      <div class="notif-body">
+        <div class="notif-title">${escHtml(n.title)}</div>
+        <div class="notif-desc">${escHtml(n.desc)}</div>
+        ${actionsHtml}
+      </div>
+      <div class="notif-time">${n.time}</div>
+    </div>`;
+  };
+
+  let html = '';
+  if (friends.length)  html += `<div class="notif-section-label">Pedidos de Amizade</div>` + friends.map(renderCard).join('');
+  if (messages.length) html += `<div class="notif-section-label">Mensagens</div>`           + messages.map(renderCard).join('');
+  if (calls.length)    html += `<div class="notif-section-label">Chamadas</div>`             + calls.map(renderCard).join('');
+  list.innerHTML = html;
+}
+
+function clearAllNotifications() {
+  STATE.notifications = [];
+  updateNotifBadge();
+  renderNotifications();
+}
+
+function removeNotif(id) {
+  STATE.notifications = STATE.notifications.filter(n => String(n.id) !== String(id));
+  updateNotifBadge();
+  renderNotifications();
+}
+
+function acceptFriendNotif(friendId, notifId) {
+  removeNotif(notifId);
+  openDM(friendId);
+  navTo('home');
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+  // Restaurar sessão guardada
+  if (db.me && db.me.name) {
+    STATE.loggedIn = true;
+    STATE.user = db.me;
+    updateUserBar();
+    // Re-inicializa Google auth em background (sem mostrar modal)
+    initGoogleAuth();
+  } else {
+    delete db.me;
+    saveDB(db);
+    // Inicia Google auth e mostra modal de login
+    initGoogleAuth();
+    showLoginModal();
+  }
+  navTo('home');
+  updateRightSidebar();
+  updateFriendsLoginGate();
+  // Notificação demo de chamada perdida após 4s
+  setTimeout(function() {
+    addNotification({ type:'call', title:'Chamada perdida', desc:'Sarah Chen tentou ligar-te.', time:'há 2 min', color:'#89b4fa' });
+  }, 4000);
+  setTimeout(simulateIncomingCall, 18000);
+});
+</script>
+</body>
+</html>
