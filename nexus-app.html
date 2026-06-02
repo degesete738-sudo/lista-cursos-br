@@ -1236,7 +1236,8 @@ const STATE = {
   incomingFriend: null,
   // Auth
   loggedIn: false,
-  user: null,       // { name, email, initials, color, inviteToken }
+  user: null,
+  pendingInviteFrom: null,
   // Notifications
   notifications: [],
 };
@@ -2186,7 +2187,7 @@ function updateFriendsLoginGate() {
     gate.style.display = 'none';
     section.style.display = 'block';
     // Set invite link
-    const link = `nexus.gg/invite/${STATE.user.inviteToken}`;
+    const link = 'https://lista-cursos-br.vercel.app/nexus-app.html?invite=' + STATE.user.inviteToken + '&from=' + encodeURIComponent(STATE.user.name);
     document.getElementById('invite-link-text').textContent = link;
   } else {
     gate.style.display = 'block';
@@ -2195,7 +2196,7 @@ function updateFriendsLoginGate() {
 }
 
 function copyInviteLink() {
-  const link = `https://nexus.gg/invite/${STATE.user.inviteToken}`;
+  const link = 'https://lista-cursos-br.vercel.app/nexus-app.html?invite=' + STATE.user.inviteToken + '&from=' + encodeURIComponent(STATE.user.name);
   navigator.clipboard.writeText(link).then(() => {
     showToast('Link copiado! Partilha com os teus amigos. 🔗', 'success');
   }).catch(() => {
@@ -2271,6 +2272,17 @@ function renderNotifications() {
   list.innerHTML = html;
 }
 
+function showInviteBanner(fromName) {
+  addNotification({
+    type: 'friend',
+    title: fromName + ' convidou-te!',
+    desc: 'Abre o chat e envia uma mensagem para ' + fromName + '.',
+    time: 'agora',
+    color: '#a78bfa'
+  });
+  showToast(fromName + ' convidou-te para o Nexus! 🎉', 'success');
+}
+
 function clearAllNotifications() {
   STATE.notifications = [];
   updateNotifBadge();
@@ -2293,19 +2305,35 @@ function acceptFriendNotif(friendId, notifId) {
    INIT
 ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
+  // Verificar se veio de um link de convite
+  var urlParams = new URLSearchParams(window.location.search);
+  var inviteFrom = urlParams.get('from');
+  if (inviteFrom) {
+    STATE.pendingInviteFrom = decodeURIComponent(inviteFrom);
+  }
+
   // Restaurar sessão guardada
   if (db.me && db.me.name) {
     STATE.loggedIn = true;
     STATE.user = db.me;
     updateUserBar();
-    // Re-inicializa Google auth em background (sem mostrar modal)
     initGoogleAuth();
+    // Se veio por convite, mostrar notificação
+    if (STATE.pendingInviteFrom) {
+      setTimeout(function() {
+        showInviteBanner(STATE.pendingInviteFrom);
+      }, 1000);
+    }
   } else {
     delete db.me;
     saveDB(db);
-    // Inicia Google auth e mostra modal de login
     initGoogleAuth();
     showLoginModal();
+    // Mostrar mensagem de convite no modal
+    if (STATE.pendingInviteFrom) {
+      var sub = document.getElementById('login-step-1').querySelector('.login-subtitle');
+      if (sub) sub.innerHTML = '<strong style="color:var(--blue);">' + escHtml(STATE.pendingInviteFrom) + '</strong> convidou-te para o Nexus!<br>Entra para aceitar o convite.';
+    }
   }
   navTo('home');
   updateRightSidebar();
