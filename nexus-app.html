@@ -11,6 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Google Identity Services (handles OAuth popup without Firebase domain auth restriction) -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
@@ -863,8 +865,10 @@
     <div class="login-title">Entrar no Nexus</div>
     <div class="login-subtitle">Usa a tua conta Google para entrar.<br>Rápido, seguro e sem passwords.</div>
 
-    <!-- Firebase Google login button -->
-    <button class="google-btn" onclick="handleGoogleLogin()">
+    <!-- GIS rendered button (Google handles the OAuth popup) -->
+    <div id="google-btn-container" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px;"></div>
+    <!-- Fallback button shown while GIS loads -->
+    <button class="google-btn" id="google-fallback-btn" onclick="handleGoogleLogin()" style="display:none;">
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
       Continuar com Google
     </button>
@@ -1873,23 +1877,63 @@ function showToast(msg, type='success') {
 }
 
 /* ═══════════════════════════════════════════
-   AUTH  —  Firebase Auth + Google provider
+   AUTH  —  GIS popup → Firebase credential
+   (Funciona no Vercel sem adicionar domínio
+    às Firebase Authorized Domains)
 ═══════════════════════════════════════════ */
-let _firebaseUser = null; // utilizador autenticado pelo Firebase
+const GOOGLE_CLIENT_ID = '119317253923-5f6k5h0848nc1oetvce53a9bc8et85nb.apps.googleusercontent.com';
+let _firebaseUser = null;
 
 function avatarColor(email) {
   var colors = ['#89b4fa','#a78bfa','#f472b6','#4ade80','#fbbf24','#f87171','#22d3ee'];
   var i = 0;
-  for (var j=0; j<email.length; j++) i += email.charCodeAt(j);
+  for (var j=0; j<(email||'').length; j++) i += email.charCodeAt(j);
   return colors[i % colors.length];
 }
 
-/* ---------- Firebase Google login ---------- */
-function handleGoogleLogin() {
-  var provider = new firebase.auth.GoogleAuthProvider();
-  AUTH.signInWithPopup(provider).catch(function(err) {
+/* GIS SDK init — renderiza o botão oficial */
+function initGoogleAuth() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(initGoogleAuth, 300);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+  var container = document.getElementById('google-btn-container');
+  var fallback  = document.getElementById('google-fallback-btn');
+  if (container) {
+    google.accounts.id.renderButton(container, {
+      theme: 'filled_black', size: 'large',
+      shape: 'rectangular', text: 'signin_with',
+      logo_alignment: 'left', width: 320
+    });
+    if (fallback) fallback.style.display = 'none';
+  }
+}
+
+/* GIS chama isto após o utilizador escolher a conta */
+function handleCredentialResponse(response) {
+  /* Converte o JWT do Google numa credencial Firebase
+     e inicia sessão — NÃO usa popup do Firebase,
+     logo não precisa de domínio autorizado no Firebase Console */
+  var credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+  AUTH.signInWithCredential(credential).catch(function(err) {
     showToast('Erro ao entrar: ' + err.message, 'error');
   });
+}
+
+/* Botão fallback (caso GIS não carregue) */
+function handleGoogleLogin() {
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.prompt();
+  } else {
+    showToast('A carregar... tenta novamente em 2 segundos.', 'error');
+    setTimeout(initGoogleAuth, 500);
+  }
 }
 
 /* ---------- Step 2: confirmar nome ---------- */
@@ -2253,6 +2297,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var inviteFrom = urlParams.get('from');
   if (inviteFrom) STATE.pendingInviteFrom = decodeURIComponent(inviteFrom);
 
+  initGoogleAuth();
   navTo('home');
   updateRightSidebar();
   updateFriendsLoginGate();
