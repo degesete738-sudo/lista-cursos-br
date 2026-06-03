@@ -1,7 +1,8 @@
 {
   "rewrites": [
-    { "source": "/produto",       "destination": "/produto.html" },
-    { "source": "/contabilidade", "destination": "/contabilidade.html" },
-    { "source": "/crescimento",   "destination": "/crescimento.html" }
+    { "source": "/produto",            "destination": "/produto.html" },
+    { "source": "/contabilidade",      "destination": "/contabilidade.html" },
+    { "source": "/crescimento",        "destination": "/crescimento.html" },
+    { "source": "/imports-estilo-sp",  "destination": "/imports-estilo-sp.html" }
   ]
 }
